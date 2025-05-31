@@ -41,7 +41,7 @@ public class AuthController {
 	private final AuthService authService;
 	private final StringRedisTemplate redisTemplate;
 	private final TokenBlacklistService tokenService;
-	
+
 	private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
 	@Autowired
@@ -50,7 +50,7 @@ public class AuthController {
 		this.authService = authService;
 		this.redisTemplate = redisTemplate;
 		this.tokenService = tokenService;
-	
+
 		logger.debug("AuthController initialized");
 	}
 
@@ -81,7 +81,7 @@ public class AuthController {
 			// @ResponseStatus(HttpStatus.CONFLICT) on UserAlreadyExistsException handles
 			// status
 			return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-		
+
 		} catch (Exception e) { // Catch any other unexpected exceptions
 			logger.error("Unexpected error during registration for email {}: {}", currDTO.getEmail(), e.getMessage(),
 					e);
@@ -131,7 +131,7 @@ public class AuthController {
 			}
 
 			if (auth != null && auth.getName() != null) {
-				
+
 				SecurityContextHolder.clearContext();
 				logger.debug("Security Context cleared for user: {}", auth.getName());
 			} else {

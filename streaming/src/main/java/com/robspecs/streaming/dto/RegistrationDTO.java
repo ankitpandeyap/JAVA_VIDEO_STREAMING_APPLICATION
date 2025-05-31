@@ -26,7 +26,7 @@ public class RegistrationDTO {
     @NotBlank(message = "Email is required")
     private String email;
 
-    
+
     @NotBlank(message = "Username is required")
     @Size(min = 3, max = 20, message = "Username must be between 3 and 20 characters")
     // Consider adding a @Pattern for valid characters if desired
@@ -48,6 +48,6 @@ public class RegistrationDTO {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    
+
 
 }

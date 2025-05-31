@@ -52,7 +52,7 @@ public class OtpController {
             logger.error("Failed to send OTP email to {}: {}", email, e.getMessage(), e);
             // @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR) on EmailSendingException handles status
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to send OTP email: " + e.getMessage());
-        
+
         } catch (Exception e) { // Catch any other unexpected exceptions
             logger.error("Unexpected error during OTP request for email {}: {}", email, e.getMessage(), e);
             return ResponseEntity.internalServerError().body("Failed to request OTP: An unexpected error occurred.");
@@ -85,7 +85,7 @@ public class OtpController {
             errorResponse.put("message", e.getMessage());
             errorResponse.put("verified", false);
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(errorResponse);
-        
+
         } catch (Exception e) { // Catch any other unexpected exceptions
             logger.error("Unexpected error during OTP verification for email {}: {}", email, e.getMessage(), e);
             Map<String, Object> errorResponse = new HashMap<>(); // Changed to Object for consistency

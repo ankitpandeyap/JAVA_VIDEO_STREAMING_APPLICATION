@@ -45,7 +45,7 @@ public class User implements UserDetails { // <-- Implement UserDetails here!
 
 	private boolean enabled = false;
 
-	
+
 
 	@CreationTimestamp // Automatically sets the creation timestamp
 	@Column(nullable = false, updatable = false) // Not nullable, not updatable after creation
@@ -134,7 +134,7 @@ public class User implements UserDetails { // <-- Implement UserDetails here!
 		return userId;
 	}
 
-	
+
 
 	public LocalDateTime getCreatedAt() {
 		return createdAt;
