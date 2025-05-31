@@ -14,6 +14,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.robspecs.streaming.exceptions.JWTBlackListedTokenException;
+import com.robspecs.streaming.exceptions.TokenNotFoundException;
 import com.robspecs.streaming.service.TokenBlacklistService;
 import com.robspecs.streaming.utils.JWTUtils;
 

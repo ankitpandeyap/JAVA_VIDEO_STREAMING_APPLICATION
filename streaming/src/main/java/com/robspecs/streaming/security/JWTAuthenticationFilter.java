@@ -18,6 +18,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.robspecs.streaming.dto.LoginDTO;
 import com.robspecs.streaming.utils.JWTUtils;
 
 import jakarta.servlet.FilterChain;

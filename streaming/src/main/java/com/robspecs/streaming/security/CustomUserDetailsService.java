@@ -8,6 +8,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
+import com.robspecs.streaming.entities.User;
+import com.robspecs.streaming.repository.UserRepository;
+
 
 @Component
 public class CustomUserDetailsService implements UserDetailsService {
