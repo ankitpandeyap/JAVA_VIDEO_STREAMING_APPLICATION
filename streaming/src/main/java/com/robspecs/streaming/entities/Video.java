@@ -33,7 +33,7 @@ public class Video {
     private Long views = 0L;
 
     @Column(nullable = false)
-    private String ContentType;
+    private String contentType;
 
     // Many-to-One relationship with User
     // @JoinColumn defines the foreign key column in the 'videos' table
@@ -75,11 +75,11 @@ public class Video {
     }
 
     public String getContentType() {
-        return ContentType;
+        return contentType;
     }
 
     public void setContentType(String contentType) {
-        ContentType = contentType;
+        this.contentType = contentType;
     }
 
     public User getUploadUser() {
