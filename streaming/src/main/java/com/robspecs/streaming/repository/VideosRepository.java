@@ -12,5 +12,6 @@ public interface VideosRepository extends JpaRepository<Video, Long> {
 	
 	List<Video> findByVideoNameAndUploadUser(String videoName, User user);
 	Optional<Video> findByVideoIdAndUploadUser(Long id,User user);
+	List<Video> findAllByUploadUser(User user);
 
 }

@@ -75,9 +75,9 @@ public class VideoServiceImpl implements VideoService {
 	    Video newVideo = new Video();
 	    newVideo.setContentType(file.getContentType());
 	    newVideo.setUploadUser(user);
-	    newVideo.setVideoName(cleanFileName);
+	    newVideo.setVideoName(v.getTitle());
 	    newVideo.setVideoURL(filePath.toString());
-	    
+	    newVideo.setDescription(v.getDescription());
 	    videoRepository.save(newVideo);
 	    
 	    

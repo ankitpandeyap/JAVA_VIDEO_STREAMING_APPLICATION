@@ -34,6 +34,9 @@ public class Video {
 
     @Column(nullable = false)
     private String contentType;
+    
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
     // Many-to-One relationship with User
     // @JoinColumn defines the foreign key column in the 'videos' table
@@ -89,4 +92,14 @@ public class Video {
     public void setUploadUser(User uploadUser) {
         this.uploadUser = uploadUser;
     }
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+    
+    
 }
