@@ -1,0 +1,76 @@
+.login-page-container {
+    min-height: 100vh; /* Takes full viewport height */
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    background-color: var(--bg-color); /* Uses your global background color */
+    padding: 2rem; /* Add some padding for smaller screens */
+}
+
+/* This will be the card container for the login form */
+.login-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* min-height: 80vh; Removed, as parent .login-page-container handles overall height */
+    padding: 2rem;
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    max-width: 400px;
+    width: 100%; /* Ensure it takes full width up to max-width */
+    margin: auto; /* Centers the container within the page container */
+}
+
+/* This will style the Login title */
+.login-title {
+    font-size: 2rem; /* Equivalent to text-2xl */
+    margin-bottom: 1rem; /* mb-4 */
+    font-weight: bold; /* font-bold */
+    text-align: center; /* text-center */
+    color: var(--text-color); /* Use global text color */
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 1rem; /* Equivalent to space-y-4 for vertical spacing between inputs/buttons */
+}
+
+.login-form input {
+    /* These styles already exist, ensuring they apply to all inputs */
+    margin-bottom: 0; /* Remove individual margin-bottom if using gap on form */
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+.login-form input:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+.login-button {
+    padding: 0.75rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition);
+    width: 100%; /* Ensure button takes full width */
+}
+
+.login-button:hover {
+    background-color: var(--secondary-color);
+}
+
+.login-error {
+    color: var(--error-color);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}

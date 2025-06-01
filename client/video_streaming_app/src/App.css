@@ -1,0 +1,40 @@
+/* app.css (or global.css) */
+
+/* Apply box-sizing: border-box globally for consistent layout behavior */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  /* Colors */
+  --primary-color: #4f46e5;
+  --secondary-color: #6366f1;
+  --bg-color: #f9fafb;
+  --text-color: #1f2937;
+  --error-color: #dc2626;
+  --success-color: #16a34a;
+
+  /* Other variables */
+  --border-radius: 0.5rem;
+  --transition: 0.3s ease-in-out;
+  --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+input,
+button {
+  font-family: inherit;
+}

@@ -11,6 +11,6 @@ import com.robspecs.streaming.entities.Video;
 public interface VideosRepository extends JpaRepository<Video, Long> {
 	
 	List<Video> findByVideoNameAndUploadUser(String videoName, User user);
-	Optional<Video> findByVideoId(Long id,User user);
+	Optional<Video> findByVideoIdAndUploadUser(Long id,User user);
 
 }
