@@ -1,309 +1,210 @@
-/* Register.css - Complete Styles */
+/* src/css/Register.css - MODIFIED FOR DARK THEME */
 
-/*
- * This file contains the CSS styles for the Register page.
- * It defines the layout, typography, form elements, and responsiveness.
- */
-
-/* -------------------------------------------------------------------------- */
-/* GLOBAL LAYOUT STYLES                            */
-/* -------------------------------------------------------------------------- */
-
-/* Base container for the whole registration page */
 .register-container {
-    display: flex; /* Use flexbox for layout */
-    flex-direction: column; /* Stack children vertically */
-    align-items: center; /* Center children horizontally */
-    justify-content: center; /* Center children vertically */
-    min-height: 100vh; /* Ensures the container takes at least the full viewport height */
-    background: #f7f7f7; /* Light grey background for the page */
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; /* Modern, sans-serif font stack */
-    padding: 20px; /* Padding around the content */
-    box-sizing: border-box; /* Include padding in the element's total height calculation */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 64px); /* Full height minus header if applicable */
+    background-color: var(--bg-color-dark); /* Main dark background */
+    padding: 2rem 1rem; /* Add padding for responsiveness */
+    box-sizing: border-box; /* Ensure padding is included in element's total width and height */
 }
 
-/* Card/Box containing the registration form */
 .register-card {
-    background: white; /* White background for the form card */
-    padding: 40px; /* Internal padding within the card */
-    border-radius: 16px; /* Rounded corners for the card */
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
-    width: 100%; /* Take full width available within its parent */
-    max-width: 400px; /* Maximum width for the card on larger screens */
-    box-sizing: border-box; /* Include padding in the element's total width calculation */
+    background-color: var(--bg-color-medium); /* Dark card background */
+    padding: 2rem;
+    border-radius: var(--border-radius-md); /* Medium border radius */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* Darker shadow */
+    width: 100%;
+    max-width: 450px; /* Slightly wider for register form */
+    text-align: center;
+    color: var(--text-color-light); /* Light text color */
 }
 
-/* Title for each step of the registration process */
 .register-title {
-    font-size: 28px; /* Large font size for the title */
-    font-weight: 600; /* Semi-bold font weight */
-    margin-bottom: 30px; /* Space below the title */
-    color: #333; /* Dark grey text color */
-    text-align: center; /* Center align the title text */
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-color-light); /* Light text color for title */
+    font-weight: bold;
 }
 
-/* -------------------------------------------------------------------------- */
-/* FORM ELEMENTS                               */
-/* -------------------------------------------------------------------------- */
-
-/* General label styles for all form fields */
-form label {
-    display: block; /* Make labels take up full width, placing input on new line */
-    font-weight: 500; /* Medium font weight */
-    margin-bottom: 6px; /* Space below the label */
-    color: #444; /* Darker grey text color */
+.register-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem; /* Spacing between form elements */
 }
 
-/*
- * General styles for all form inputs (text, email, password, number)
- * and the dropdown select element.
- * These styles ensure consistent appearance across various form fields.
- */
-form input[type="text"],
-form input[type="email"],
-form input[type="password"],
-form input[type="number"],
-.register-dropdown {
-    width: 100%; /* Make inputs take up full width of their container */
-    padding: 12px 16px; /* Vertical (12px) and horizontal (16px) padding inside the input */
-    margin-bottom: 20px; /* Standard spacing between each form field */
-    border: 1px solid #ddd; /* Light grey border */
-    border-radius: 12px; /* Rounded corners for inputs */
-    background-color: #fefefe; /* Very light background for input fields */
-    font-size: 16px; /* Standard font size for input text */
-    transition: border 0.2s; /* Smooth transition for border color on focus */
-    box-sizing: border-box; /* Ensures padding and border are included in the element's total width/height */
-    line-height: 1.5; /* Helps vertical alignment of text within inputs/dropdowns */
-    /* Height is typically derived from padding and line-height, but can be set explicitly if needed, e.g., height: 40px; */
+.form-group {
+    text-align: left; /* Align labels to the left */
 }
 
-/* Focus styles for inputs and dropdown when they are active */
-form input:focus,
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-color-medium); /* Muted light text for labels */
+    font-weight: 500;
+}
+
+.register-form input[type="email"],
+.register-form input[type="password"],
+.register-form input[type="text"],
+.register-dropdown { /* Add specific types if needed */
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color-light); /* Lighter dark border */
+    border-radius: var(--border-radius-sm); /* Small border radius */
+    background-color: var(--bg-color-light); /* Lighter dark background for inputs */
+    color: var(--text-color-light); /* Light text in inputs */
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.register-form input:focus,
 .register-dropdown:focus {
-    border-color: #ff5a5f; /* Highlight border with a red/pink color on focus */
-    outline: none; /* Remove the default browser outline */
-    box-shadow: 0 0 0 0.2rem rgba(255, 90, 95, 0.25); /* Optional: subtle shadow on focus for better visual feedback */
+    border-color: var(--primary-color); /* Primary color on focus */
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.3); /* Subtle focus glow */
 }
 
-/* Style for the main submit button (e.g., "Complete Registration") */
-button[type="submit"] {
-    background-color: #ff5a5f; /* Red/pink background color */
-    color: white; /* White text color */
-    font-size: 16px; /* Standard font size */
-    padding: 12px 0; /* Vertical padding, no horizontal padding (width is 100%) */
-    border: none; /* No border */
-    border-radius: 12px; /* Rounded corners */
-    cursor: pointer; /* Change cursor to pointer on hover */
-    transition: background-color 0.3s; /* Smooth transition for background color */
-    width: 100%; /* Take full width of its container */
-    font-weight: 600; /* Semi-bold font weight */
-}
-
-/* Hover effect for the main submit button */
-button[type="submit"]:hover {
-    background-color: #e14b50; /* Darker red/pink on hover */
-}
-
-/* Styles for the OTP send/verify buttons (if different from main submit) */
-.otp-button {
-    background-color: #007bff; /* Blue background color */
-    color: white; /* White text color */
-    font-size: 14px; /* Slightly smaller font size */
-    padding: 10px 14px; /* Padding for the button */
-    border: none; /* No border */
-    border-radius: 10px; /* Rounded corners */
-    cursor: pointer; /* Change cursor to pointer on hover */
-    margin-left: 10px; /* Space from the input if in the same line (e.g., in .otp-group) */
-    font-weight: 500; /* Medium font weight */
-    transition: background-color 0.2s; /* Smooth transition for background color */
-}
-
-/* Hover effect for OTP buttons */
-.otp-button:hover {
-    background-color: #0069d9; /* Darker blue on hover */
-}
-
-/* Flex container for grouping OTP input and button together */
-.otp-group {
-    display: flex; /* Use flexbox */
-    align-items: center; /* Vertically center items within the group */
-    margin-bottom: 20px; /* Add standard margin-bottom for spacing after this group */
-}
-
-/* -------------------------------------------------------------------------- */
-/* UTILITIES                                 */
-/* -------------------------------------------------------------------------- */
-
-/* Container for redirect link to login page */
-.redirect-login {
-    text-align: center; /* Center align the text */
-    margin-top: 20px; /* Space above the link */
-}
-
-/* Styling for the login redirect link */
-.redirect-login a {
-    color: #ff5a5f; /* Red/pink color for the link */
-    text-decoration: none; /* Remove underline */
-    font-weight: 600; /* Semi-bold font weight */
-    margin-left: 5px; /* Small space from preceding text */
-}
-
-/* Hover effect for the login redirect link */
-.redirect-login a:hover {
-    text-decoration: underline; /* Add underline on hover */
-}
-
-/* -------------------------------------------------------------------------- */
-/* DROPDOWN SPECIFIC STYLES                        */
-/* -------------------------------------------------------------------------- */
-
-/*
- * Specific styles for the dropdown select element.
- * These override or add to the general form input styles.
- */
 .register-dropdown {
-    /*
-     * -webkit-appearance and -moz-appearance remove default browser styling for select elements,
-     * allowing for custom styling.
-     */
-    -webkit-appearance: none;
+    -webkit-appearance: none; /* Remove default dropdown arrow for custom styling */
     -moz-appearance: none;
     appearance: none;
-    /* Custom arrow icon for the dropdown, encoded as an SVG data URI */
-    background-image: url('data:image/svg+xml;utf8,<svg fill="%23222222" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
-    background-repeat: no-repeat; /* Prevent arrow from repeating */
-    background-position: right 12px center; /* Position the arrow icon to the right, vertically centered */
-    background-size: 16px; /* Size of the arrow icon */
-    color: #222222; /* Specific text color for dropdown options */
-    background-color: #ffffff; /* Specific background color for the dropdown */
-    cursor: pointer; /* Change cursor to pointer on hover */
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; /* Smooth transitions */
+    cursor: pointer;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%23dcddde" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); /* Custom arrow */
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1.5em;
 }
 
-/* Styles for individual options within the dropdown */
-.register-dropdown option {
-    font-size: 16px; /* Font size for options */
-    color: #222222; /* Text color for options */
-    padding: 8px 12px; /* Padding for options (might not be fully supported by all browsers) */
+.register-button {
+    background-color: var(--primary-color); /* Primary color for buttons */
+    color: var(--text-color-light); /* White text */
+    padding: 0.75rem 1.2rem;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-weight: 600;
+    transition: var(--transition);
+    width: 100%;
 }
 
-/* -------------------------------------------------------------------------- */
-/* PASSKEY SHOW/HIDE TOGGLE                           */
-/* -------------------------------------------------------------------------- */
-
-/* Container for the passkey input field and its toggle button */
-.passkey-input-container {
-    margin-bottom: 20px; /* Ensures consistent spacing after this field */
-    display: flex; /* Arranges the input and button side-by-side */
-    align-items: center; /* Vertically centers the input and button within the container */
-    width: 100%; /* Takes full width */
-    gap: 10px; /* Creates a 10px space between the input field and the button */
+.register-button:hover {
+    background-color: var(--secondary-color); /* Secondary color on hover */
 }
 
-/* Styles for the passkey input field specifically */
-.passkey-input-container input {
-    flex-grow: 1; /* Allows the input to take up all available horizontal space */
-    margin-bottom: 0; /* Important: Remove the default margin-bottom from the input inside this flex container */
-    /* Other properties like padding, border, etc., are inherited from the general `form input` rules */
+.redirect-login {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--text-color-medium); /* Muted light text */
 }
 
-/* Styles for the "Show/Hide" toggle button */
+.redirect-login a {
+    color: var(--text-color-link); /* Bright link color */
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.redirect-login a:hover {
+    text-decoration: underline;
+    color: var(--primary-color); /* Primary color on hover */
+}
+
+/* Specific styles for OTP related elements */
+.otp-input-container {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.otp-input {
+    width: 3rem; /* Fixed width for OTP boxes */
+    height: 3rem; /* Fixed height for OTP boxes */
+    text-align: center;
+    font-size: 1.5rem;
+    border: 1px solid var(--border-color-light);
+    border-radius: var(--border-radius-sm);
+    background-color: var(--bg-color-light);
+    color: var(--text-color-light);
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.otp-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.3);
+}
+
+.otp-button {
+    background-color: var(--secondary-color); /* A different accent for OTP button */
+    color: var(--text-color-light);
+    padding: 0.6rem 1rem;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: background-color var(--transition);
+}
+
+.otp-button:hover {
+    background-color: var(--primary-color);
+}
+
+.otp-timer {
+    font-size: 0.85rem;
+    color: var(--text-color-dark); /* Darker muted text for timer */
+    margin-top: 0.5rem;
+}
+
+.otp-error, .register-error {
+    color: var(--accent-color); /* Error red */
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    text-align: center;
+}
+
+/* Passkey toggle button styling */
 .passkey-toggle-btn {
-    background: none; /* No background color */
-    border: none; /* No border */
-    color: #007bff; /* Blue text color */
-    cursor: pointer; /* Change cursor to pointer on hover */
-    font-size: 0.9em; /* Slightly smaller font for the toggle text */
-    
-    /* Key for vertical alignment: Match input's effective height/padding */
-    padding: 12px 10px; /* Match vertical padding (12px) of general inputs for alignment */
-    line-height: 1.5; /* Match line-height of general inputs for vertical text centering */
-    height: auto; /* Let content and padding determine the button's height */
-
-    flex-shrink: 0; /* Prevents the button from shrinking on smaller screens */
-    text-align: center; /* Center align the text horizontally */
-    white-space: nowrap; /* Prevents the "Show" or "Hide" text from wrapping */
-    
-    display: flex; /* Use flexbox for internal text centering */
-    align-items: center; /* Vertically center the text within the button */
-    justify-content: center; /* Horizontally center the text within the button */
-
-    transition: color 0.2s ease; /* Smooth transition for text color on hover */
+    background: none;
+    border: none;
+    color: var(--text-color-link); /* Link color for the passkey toggle */
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+    transition: color var(--transition);
 }
 
-/* Hover effect for the passkey toggle button */
 .passkey-toggle-btn:hover {
-    color: #0056b3; /* Darker blue on hover */
-    text-decoration: underline; /* Add underline on hover */
+    color: var(--primary-color);
+    text-decoration: underline;
 }
 
-/* -------------------------------------------------------------------------- */
-/* LOADING SPINNER CSS                            */
-/* -------------------------------------------------------------------------- */
-
-/* Container for the loading spinner, typically used within buttons */
+/* Loading spinner within buttons */
 .button-spinner {
-    display: flex; /* Use flexbox */
-    flex-direction: column; /* Stack spinner and text vertically */
-    align-items: center; /* Center horizontally */
-    justify-content: center; /* Center vertically */
-    height: 2.5rem; /* Fixed height for the spinner container */
-    width: 100%; /* Take full width */
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid var(--text-color-light); /* White spinner on buttons */
+    border-radius: 50%;
+    width: 1.2rem;
+    height: 1.2rem;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 0.5rem;
 }
 
-/* The spinner animation element */
-.spinner {
-    width: 2rem; /* Size of the spinner */
-    height: 2rem; /* Size of the spinner */
-    border: 0.3em solid rgba(0, 0, 0, 0.2); /* Light grey border */
-    border-top: 0.3em solid #007bff; /* Blue top border for animation effect */
-    border-radius: 50%; /* Makes it a perfect circle */
-    animation: rotate 1.2s linear infinite; /* Apply the rotation animation */
-    margin-bottom: 0.5rem; /* Space between spinner and loading text */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
-/* Text displayed below the spinner */
-.loading-text {
-    font-size: 0.8rem; /* Smaller font size */
-    color: #555; /* Medium grey text color */
-    font-style: normal; /* Ensure normal font style */
-    font-weight: 400; /* Normal font weight */
-}
-
-/* Keyframe animation for the spinner rotation */
-@keyframes rotate {
-    0% {
-        transform: rotate(0deg); /* Start at 0 degrees rotation */
-    }
-    100% {
-        transform: rotate(360deg); /* Rotate a full 360 degrees */
-    }
-}
-
-/* -------------------------------------------------------------------------- */
-/* MEDIA QUERIES                                */
-/* -------------------------------------------------------------------------- */
-
-/* Styles for screens with a maximum width of 480px (e.g., mobile devices) */
+/* Responsive adjustments */
 @media (max-width: 480px) {
-    /* Adjust padding and border-radius of the registration card for smaller screens */
     .register-card {
-        padding: 25px 20px;
-        border-radius: 10px;
+        padding: 1.5rem;
+        border-radius: var(--border-radius-sm);
     }
-
-    /* Adjust font size of the title for smaller screens */
     .register-title {
-        font-size: 24px;
-    }
-
-    /*
-     * Adjust padding for the main container on smaller screens,
-     * potentially to accommodate a fixed footer if present.
-     * Assuming .login-container shares similar responsiveness.
-     */
-    .login-container,
-    .register-container {
-        padding-bottom: 100px; /* Add space for a fixed footer if applicable */
+        font-size: 1.75rem;
     }
 }

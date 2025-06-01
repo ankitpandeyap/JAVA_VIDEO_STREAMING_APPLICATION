@@ -1,152 +1,165 @@
+/* src/css/Sidebar.css - MODIFIED FOR DARK THEME */
+
 .sidebar-container {
-  width: 200px; /* Fixed width for the sidebar */
-  flex-shrink: 0; /* Prevent it from shrinking */
-  background-color: #ffffff; /* White background */
-  padding: 20px;
-  border-right: 1px solid #f0f0f0; /* Subtle separator from main content */
-  display: flex;
-  flex-direction: column;
-  gap: 15px; /* Space between items */
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.03); /* Light shadow on the right edge */
-  border-radius: 0 12px 12px 0; /* Rounded right corners only */
-  height: calc(100vh - 64px); /* Full height minus header height (approx) */
-  position: sticky; /* Make it sticky */
-  top: 64px; /* Position below the header */
-  align-items: flex-start; /* Align compose button to left */
+    width: 250px; /* Fixed width for the sidebar */
+    min-width: 250px; /* Ensures it doesn't shrink */
+    background-color: var(--bg-color-medium); /* Slightly lighter dark background for the sidebar */
+    padding: 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-color-dark); /* Darker border on the right */
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2); /* Subtle dark shadow */
+    position: sticky; /* Makes it sticky as you scroll content */
+    top: 64px; /* Adjust based on your header height */
+    height: calc(100vh - 64px); /* Full height minus header */
+    overflow-y: auto; /* Enable scrolling for long content */
+    z-index: 900; /* Below header, above main content */
 }
 
 .sidebar-header {
-  width: 100%;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #eee;
-  margin-bottom: 15px;
-  text-align: center;
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color-dark); /* Separator */
 }
 
 .sidebar-header .logo {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #007bff; /* Airbnb blue for the logo */
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--primary-color); /* Primary color for your app logo/name in sidebar */
+    text-decoration: none;
+    display: block; /* Ensure it takes up its own line */
 }
 
 .sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  gap: 10px; /* Space between buttons */
+    flex-grow: 1; /* Allows nav items to take up available space */
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* Space between nav items */
 }
 
 .sidebar-button {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 8px; /* Slightly rounded buttons */
-  background-color: transparent; /* Default transparent background */
-  color: #555;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
-  text-align: left; /* Align text to left */
+    display: flex;
+    align-items: center;
+    gap: 1rem; /* Space between icon and text */
+    padding: 0.75rem 1rem;
+    background-color: transparent; /* No background by default */
+    border: none;
+    border-radius: var(--border-radius-sm); /* Small border radius for buttons */
+    color: var(--text-color-medium); /* Muted light text color */
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left; /* Align text left */
+    width: 100%;
+    transition: background-color var(--transition), color var(--transition);
 }
 
 .sidebar-button:hover {
-  background-color: #f0f0f0; /* Light hover background */
-  color: #333;
+    background-color: var(--bg-color-light); /* Lighter dark background on hover */
+    color: var(--text-color-light); /* Brighter text on hover */
 }
 
 .sidebar-button.active {
-  background-color: #e0f0ff; /* Light blue background for active button */
-  color: #007bff; /* Blue text for active button */
-  font-weight: 600;
+    background-color: rgba(88, 101, 242, 0.2); /* Semi-transparent primary color for active state */
+    color: var(--primary-color); /* Primary color for active text */
+    font-weight: 600;
 }
 
-.sidebar-button .icon {
-  font-size: 1.2rem; /* Size for emoji icons */
-  line-height: 1; /* Ensure consistent vertical alignment */
+.sidebar-button.active svg {
+    color: var(--primary-color); /* Ensure icon also gets primary color if it's an SVG */
 }
+
+.sidebar-button svg {
+    font-size: 1.5rem; /* Icon size */
+    color: var(--text-color-dark); /* Darker muted text for icons by default */
+    transition: color var(--transition);
+}
+
+.sidebar-button:hover svg {
+    color: var(--text-color-light); /* Brighter icon on hover */
+}
+
 
 .compose-button {
-  background-color: #007bff; /* Airbnb blue for compose */
-  color: white;
-  padding: 12px 20px;
-  border-radius: 25px; /* Pill shape */
-  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2);
-  font-weight: 600;
-  margin-bottom: 10px; /* Space below compose button */
+    background-color: var(--primary-color); /* Primary accent color for the compose button */
+    color: var(--text-color-light); /* White text */
+    padding: 0.8rem 1.2rem;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    text-align: center;
+    margin-top: 1.5rem; /* Space above the button */
+    transition: background-color var(--transition), box-shadow var(--transition), transform 0.2s ease;
+    box-shadow: 0 4px 10px rgba(88, 101, 242, 0.3); /* Shadow with primary color */
 }
 
 .compose-button:hover {
-  background-color: #0056b3;
+    background-color: var(--secondary-color); /* Secondary color on hover */
+    transform: translateY(-1px); /* Slight lift */
 }
 
-/* Responsive adjustments for sidebar */
-@media (max-width: 768px) {
-  .sidebar-container {
-    width: 100%; /* Full width on smaller screens */
-    height: auto; /* Auto height */
-    border-right: none;
-    border-bottom: 1px solid #f0f0f0; /* Add bottom border */
-    border-radius: 0; /* Remove rounded corners */
-    position: static; /* Remove sticky position */
-    padding: 15px;
-    flex-direction: row; /* Layout items in a row */
-    justify-content: center; /* Center items horizontally */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Light shadow */
-    flex-wrap: wrap; /* Allow buttons to wrap */
-    gap: 10px; /* Adjust gap for row layout */
-  }
-
-  .sidebar-header {
-    display: none; /* Hide header/logo on small screens if space is tight */
-  }
-
-  .sidebar-nav {
-    flex-direction: row; /* Keep nav items in a row */
-    flex-wrap: wrap; /* Allow wrapping */
-    justify-content: center;
-  }
-
-  .sidebar-button {
-    flex-grow: 1; /* Allow buttons to grow and fill space */
-    max-width: 150px; /* Limit max width for a cleaner look */
-    justify-content: center; /* Center text and icon in button */
-    padding: 8px 12px;
-    font-size: 0.9rem;
-  }
-
-  .compose-button {
-    max-width: 180px; /* Adjust max width for mobile compose button */
-    padding: 10px 15px;
-  }
-
-  .sidebar-button.active {
-    background-color: #e0f0ff; /* Light blue background for active button */
-    color: #007bff; /* Blue text for active button */
-    font-weight: 600;
-  }
-
-  /* Specific active state for the compose button */
-  .compose-button.active {
-    background-color: #0056b3; /* A slightly darker blue for active compose */
-    color: white;
-    box-shadow: 0 2px 5px rgba(0, 123, 255, 0.3); /* Subtle shadow when active */
-  }
-
-  /* Ensure hover styles still apply to active buttons */
-  .sidebar-button.active:hover {
-    background-color: #d0e0f0; /* Even lighter blue on hover for active non-compose */
-  }
-
-  .compose-button.active:hover {
-    background-color: #004085; /* Even darker blue on hover for active compose */
-  }
-}
 .sidebar-button.disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  pointer-events: none;
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: transparent;
+    color: var(--text-color-dark);
+}
+
+.sidebar-button.disabled svg {
+    color: var(--text-color-dark);
+}
+
+/* Responsive adjustments for smaller screens, if sidebar collapses or becomes a top/bottom bar */
+@media (max-width: 768px) {
+    .sidebar-container {
+        width: 100%;
+        min-width: unset;
+        height: auto;
+        top: unset;
+        bottom: 0;
+        border-right: none;
+        border-top: 1px solid var(--border-color-dark); /* Border on top */
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2); /* Shadow on top */
+        flex-direction: row; /* Horizontal layout for small screens */
+        justify-content: space-around;
+        padding: 0.75rem 1rem;
+        overflow-y: hidden;
+        z-index: 1000; /* Ensure it stays above content if it's a bottom bar */
+    }
+
+    .sidebar-header, .compose-button {
+        display: none; /* Hide header and compose button on small screens */
+    }
+
+    .sidebar-nav {
+        flex-direction: row; /* Horizontal nav items */
+        flex-wrap: wrap; /* Allow wrapping if many items */
+        justify-content: space-around;
+        gap: 0.5rem;
+    }
+
+    .sidebar-button {
+        flex-direction: column; /* Icon and text stacked */
+        padding: 0.5rem 0.25rem;
+        font-size: 0.75rem;
+        gap: 0.25rem;
+        min-width: 60px; /* Ensure buttons are not too small */
+        justify-content: center;
+    }
+    .sidebar-button svg {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar-button {
+        font-size: 0.7rem;
+        min-width: 50px;
+    }
+    .sidebar-button svg {
+        font-size: 1.1rem;
+    }
 }

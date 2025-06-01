@@ -1,9 +1,11 @@
+/* src/css/Login.css - MODIFIED FOR DARK THEME */
+
 .login-page-container {
     min-height: 100vh; /* Takes full viewport height */
     display: flex;
     justify-content: center; /* Center horizontally */
     align-items: center; /* Center vertically */
-    background-color: var(--bg-color); /* Uses your global background color */
+    background-color: var(--bg-color-dark); /* Use the main dark background color */
     padding: 2rem; /* Add some padding for smaller screens */
 }
 
@@ -13,11 +15,10 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    /* min-height: 80vh; Removed, as parent .login-page-container handles overall height */
     padding: 2rem;
-    background-color: white;
-    border-radius: var(--border-radius);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background-color: var(--bg-color-medium); /* Dark card background */
+    border-radius: var(--border-radius-md); /* Use medium border radius */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* Darker shadow */
     max-width: 400px;
     width: 100%; /* Ensure it takes full width up to max-width */
     margin: auto; /* Centers the container within the page container */
@@ -29,7 +30,7 @@
     margin-bottom: 1rem; /* mb-4 */
     font-weight: bold; /* font-bold */
     text-align: center; /* text-center */
-    color: var(--text-color); /* Use global text color */
+    color: var(--text-color-light); /* Use light text color */
 }
 
 .login-form {
@@ -40,36 +41,37 @@
 }
 
 .login-form input {
-    /* These styles already exist, ensuring they apply to all inputs */
-    margin-bottom: 0; /* Remove individual margin-bottom if using gap on form */
     padding: 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color-light); /* Lighter dark border */
+    border-radius: var(--border-radius-sm); /* Use small border radius */
+    background-color: var(--bg-color-light); /* Lighter dark background for inputs */
+    color: var(--text-color-light); /* Light text in inputs */
     transition: var(--transition);
 }
 
 .login-form input:focus {
-    border-color: var(--primary-color);
+    border-color: var(--primary-color); /* Primary color on focus */
     outline: none;
+    box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.3); /* Subtle focus glow */
 }
 
 .login-button {
     padding: 0.75rem;
-    background-color: var(--primary-color);
-    color: white;
+    background-color: var(--primary-color); /* Primary color for buttons */
+    color: var(--text-color-light); /* White text */
     border: none;
-    border-radius: var(--border-radius);
+    border-radius: var(--border-radius-sm); /* Use small border radius */
     cursor: pointer;
     transition: var(--transition);
     width: 100%; /* Ensure button takes full width */
 }
 
 .login-button:hover {
-    background-color: var(--secondary-color);
+    background-color: var(--secondary-color); /* Secondary color on hover */
 }
 
 .login-error {
-    color: var(--error-color);
+    color: var(--accent-color); /* Use accent color for errors (red) */
     font-size: 0.875rem;
     margin-bottom: 1rem;
     text-align: center;

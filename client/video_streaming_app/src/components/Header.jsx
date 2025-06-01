@@ -12,10 +12,7 @@ export default function Header() {
   const { pathname } = useLocation();
 
   let pageTitle = "";
-  if (pathname === "/dashboard") pageTitle = "Your Inbox";
-  else if (pathname === "/compose") pageTitle = "Compose Message";
-  else if (pathname === "/sent") pageTitle = "Sent Messages";
-  else if (pathname === "/profile")  pageTitle = "Your Profile";
+  if (pathname === "/profile")  pageTitle = "Your Profile";
   const handleLogout = async () => {
     try {
       await axiosInstance.post("/auth/logout");
@@ -29,7 +26,7 @@ export default function Header() {
   };
   return (
     <header className="header-bar">
-      <div className="header-logo">CRYPTO_APP</div>
+      <div className="header-logo">VIDEO-STREAMING_APP</div>
       <div className="header-title">{pageTitle}</div>
       <nav className="header-nav">
         {isAuthenticated && pathname !== "/login" && (

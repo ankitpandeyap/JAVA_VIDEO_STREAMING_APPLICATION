@@ -1,9 +1,10 @@
+/* src/css/Footer.css - MODIFIED FOR DARK THEME */
 .register-footer {
-  background-color: #ffffff;
-  color: #ff5a5f;
+  background-color: var(--bg-color-medium); /* Dark background for footer */
+  color: var(--text-color-medium); /* Muted text color */
   padding: 1.25rem 1rem;
   text-align: center;
-  border-top: 1px solid #eaeaea;
+  border-top: 1px solid var(--border-color-dark); /* Darker border */
   font-size: 1rem;
   position: fixed;
   bottom: 0;
@@ -15,12 +16,12 @@
 }
 
 .register-footer a {
-  color: #ff5a5f;
+  color: var(--text-color-link); /* Bright link color for contrast */
   text-decoration: none;
   font-weight: 600;
 }
 
 .register-footer a:hover {
   text-decoration: underline;
-  color: #e14b50;
+  color: var(--primary-color); /* Primary color on hover */
 }

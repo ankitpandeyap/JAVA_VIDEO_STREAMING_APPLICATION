@@ -1,50 +1,74 @@
-/* src/css/ProfilePage.css */
+/* src/css/ProfilePage.css - MODIFIED FOR DARK THEME */
 
 .main-layout {
     display: flex;
-    height: 100vh;
-    background-color: #f3f4f6; /* Consistent with Dashboard.css */
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: calc(100vh - 64px); /* Full viewport height minus header */
+    background-color: var(--bg-color-dark); /* Main dark background */
+    color: var(--text-color-light); /* Default light text color for the layout */
 }
 
+/* Consider if you still use .sidebar in this layout or a direct sidebar component */
+/* .sidebar {
+    width: 250px;
+    background-color: var(--bg-color-medium);
+    padding: 2rem;
+    border-right: 1px solid var(--border-color-dark);
+} */
+
 .profile-content-area {
-    flex: 1;
-    padding: 20px;
-    margin: 20px; /* Consistent with Dashboard.css */
-    border-radius: 12px; /* Consistent with Dashboard.css */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Consistent with Dashboard.css */
-    background-color: white;
-    overflow-y: auto; /* Enable scrolling if content is long */
-    display: flex; /* Use flexbox for inner content */
-    flex-direction: column; /* Stack children vertically */
+    flex-grow: 1; /* Takes remaining space */
+    padding: 2rem;
+    background-color: var(--bg-color-dark); /* Main dark background */
+    display: flex;
+    flex-direction: column;
     align-items: center; /* Center content horizontally */
-    justify-content: flex-start; /* Align content to the top */
+}
+
+.profile-container {
+    max-width: 800px;
+    width: 100%;
+    background-color: var(--bg-color-medium); /* Slightly lighter dark for the main profile card */
+    border-radius: var(--border-radius-lg); /* Larger radius for a prominent card */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Darker shadow */
+    padding: 2.5rem;
+    margin-bottom: 2rem; /* Space below the profile card */
+}
+
+.profile-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color-light); /* Lighter border for separation */
+    padding-bottom: 1.5rem;
 }
 
 .profile-title {
-    font-size: 2.2rem;
+    font-size: 2.5rem; /* Larger title */
+    color: var(--primary-color); /* Use primary color for the main title */
+    margin-bottom: 0.5rem;
     font-weight: 700;
-    color: #1a202c; /* Darker title color */
-    margin-bottom: 30px;
-    text-align: center;
-    width: 100%;
+}
+
+.profile-subtitle {
+    font-size: 1.2rem;
+    color: var(--text-color-medium); /* Muted light text for subtitle */
+    font-weight: 400;
 }
 
 .profile-details {
-    width: 100%;
-    max-width: 600px; /* Limit width for readability */
-    background-color: #f9fafb; /* Light background for details card */
-    padding: 25px 30px;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e2e8f0; /* Subtle border */
+    background-color: var(--bg-color-light); /* Even lighter dark for details section */
+    border-radius: var(--border-radius-md); /* Medium border radius */
+    padding: 2rem;
+    margin-top: 1.5rem;
+    border: 1px solid var(--border-color-light); /* Light border for separation */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Subtle internal shadow */
 }
 
 .profile-item {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid #edf2f7; /* Separator between items */
+    padding: 1rem 0;
+    border-bottom: 1px dashed var(--border-color-dark); /* Dashed darker border for items */
 }
 
 .profile-item:last-child {
@@ -53,73 +77,76 @@
 
 .profile-label {
     font-weight: 600;
-    color: #4a5568; /* Slightly darker label */
-    flex: 0 0 150px; /* Fixed width for labels */
-    margin-right: 20px;
-    font-size: 1.05rem;
+    color: var(--text-color-medium); /* Muted light text for labels */
+    font-size: 1rem;
 }
 
 .profile-value {
-    color: #2d3748; /* Darker value color */
+    color: var(--text-color-light); /* Light text for values */
     font-size: 1.05rem;
-    word-break: break-all; /* Break long words */
+    word-break: break-all; /* Ensure long values wrap */
+    text-align: right;
 }
 
-/* Loading, Error, and No Data States */
 .loading-profile,
 .error-profile,
 .no-profile-data {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 200px; /* Ensure visibility */
-    color: #666;
+    text-align: center;
     font-size: 1.1rem;
+    color: var(--text-color-dark); /* Darker muted text for info/messages */
+    padding: 3rem;
 }
 
 .error-message {
-    color: #e53e3e; /* Red color for error messages */
-    font-weight: 500;
+    color: var(--accent-color); /* Error red */
+    font-weight: 600;
+    margin-top: 1rem;
 }
 
-/* Responsive Adjustments */
+/* Placeholder for responsive design */
 @media (max-width: 768px) {
-    .profile-content-area {
-        margin: 10px;
-        padding: 15px;
+    .profile-container {
+        padding: 2rem;
+        border-radius: var(--border-radius-md);
     }
 
-    .profile-details {
-        padding: 20px;
-    }
-
-    .profile-item {
-        flex-direction: column; /* Stack label and value on small screens */
-        align-items: flex-start;
-    }
-
-    .profile-label {
-        width: auto; /* Remove fixed width */
-        margin-right: 0;
-        margin-bottom: 5px; /* Space between label and value */
+    .profile-header {
+        margin-bottom: 1.5rem;
     }
 
     .profile-title {
-        font-size: 1.8rem;
+        font-size: 2rem;
+    }
+
+    .profile-details {
+        padding: 1.5rem;
+    }
+
+    .profile-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .profile-value {
+        text-align: left;
     }
 }
 
 @media (max-width: 480px) {
-    .profile-details {
-        padding: 15px;
+    .profile-content-area {
+        padding: 1rem;
+    }
+
+    .profile-container {
+        padding: 1.5rem;
     }
 
     .profile-title {
-        font-size: 1.5rem;
+        font-size: 1.75rem;
     }
 
-    .profile-label,
-    .profile-value {
-        font-size: 0.95rem;
+    .profile-details {
+        padding: 1rem;
     }
 }
