@@ -1,14 +1,13 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
+
 import Register from "./pages/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useLocation } from "react-router-dom";
 import Footer from "./components/Footer";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import SentMessages from './pages/SentMessages';
-import ComposeMessage from "./pages/ComposeMessage";
+
 import ProfilePage from "./pages/ProfilePage"; 
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -29,14 +28,7 @@ export default function App() {
         {/* Important: This path must match the one in your backend's application.properties */}
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
+        
        
         <Route
           path="/profile" // <--- NEW ROUTE PATH
