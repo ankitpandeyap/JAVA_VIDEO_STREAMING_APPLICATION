@@ -31,7 +31,19 @@ public class VideoDetailsDTO {
 	public void setUploadUser(String uploadUser) {
 		this.uploadUser = uploadUser;
 	}
+	public VideoDetailsDTO(String videoName, Long views, String contentType, String uploadUser) {
+		super();
+		this.videoName = videoName;
+		this.views = views;
+		ContentType = contentType;
+		this.uploadUser = uploadUser;
+	}
+	public VideoDetailsDTO() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
 	  
+	
 	  
 	  
 }

@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -23,80 +24,77 @@ import com.robspecs.streaming.service.VideoService;
 
 import jakarta.annotation.PostConstruct;
 
-
 @Service
 public class VideoServiceImpl implements VideoService {
 
 	private final VideosRepository videoRepository;
-	
+
 	public VideoServiceImpl(VideosRepository videoRepository) {
 		this.videoRepository = videoRepository;
 	}
-	
+
 	@Value("${files.video}")
 	String DIR;
-	
+
 	@PostConstruct
 	public void init() {
 		File file = new File(DIR);
-		if(file.exists() == false) {
-				file.mkdirs();
+		if (file.exists() == false) {
+			file.mkdirs();
+		} else {
+			// log
 		}
-		else {
-			//log
-		}
-		
+
 	}
-	
+
 	@Override
 	public void uploadVideo(VideoUploadDTO v, User user) throws IOException {
-	    MultipartFile file = v.getFile();
+		MultipartFile file = v.getFile();
 
-	    if (file == null || file.isEmpty()) {
-	        throw new IOException("Uploaded file is empty or null.");
-	    }
+		if (file == null || file.isEmpty()) {
+			throw new IOException("Uploaded file is empty or null.");
+		}
 
-	    if (!file.getContentType().startsWith("video/")) {
-	        throw new IOException("Invalid file type. Only video files are allowed.");
-	    }
+		if (!file.getContentType().startsWith("video/")) {
+			throw new IOException("Invalid file type. Only video files are allowed.");
+		}
 
-	    String cleanFileName = StringUtils.cleanPath(file.getOriginalFilename());
-	    String cleanUserName = StringUtils.cleanPath(user.getUsername());
-	    Path cleanBaseDir = Paths.get(DIR).toAbsolutePath().normalize();
+		String cleanFileName = StringUtils.cleanPath(file.getOriginalFilename());
+		String cleanUserName = StringUtils.cleanPath(user.getUsername());
+		Path cleanBaseDir = Paths.get(DIR).toAbsolutePath().normalize();
 
-	    Path userDirPath = cleanBaseDir.resolve(cleanUserName);
-	    Files.createDirectories(userDirPath);
+		Path userDirPath = cleanBaseDir.resolve(cleanUserName);
+		Files.createDirectories(userDirPath);
 
-	    Path filePath = userDirPath.resolve(cleanFileName);
+		Path filePath = userDirPath.resolve(cleanFileName);
 
-	    try (InputStream fileStream = file.getInputStream()) {
-	        Files.copy(fileStream, filePath, StandardCopyOption.REPLACE_EXISTING);
-	    }
-	    Video newVideo = new Video();
-	    newVideo.setContentType(file.getContentType());
-	    newVideo.setUploadUser(user);
-	    newVideo.setVideoName(v.getTitle());
-	    newVideo.setVideoURL(filePath.toString());
-	    newVideo.setDescription(v.getDescription());
-	    videoRepository.save(newVideo);
-	    
-	    
+		try (InputStream fileStream = file.getInputStream()) {
+			Files.copy(fileStream, filePath, StandardCopyOption.REPLACE_EXISTING);
+		}
+		Video newVideo = new Video();
+		newVideo.setContentType(file.getContentType());
+		newVideo.setUploadUser(user);
+		newVideo.setVideoName(v.getTitle());
+		newVideo.setVideoURL(filePath.toString());
+		newVideo.setDescription(v.getDescription());
+		videoRepository.save(newVideo);
+
 	}
 
 	@Override
-	public VideoDetailsDTO getVideo(Long Id,User user) {
+	public VideoDetailsDTO getVideo(Long Id, User user) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public VideoDetailsDTO searchByTitle(String videoName,User user) {
+	public VideoDetailsDTO searchByTitle(String videoName, User user) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Long updateViews(Long VideoId,User user) {
+	public Long updateViews(Long VideoId, User user) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -104,7 +102,12 @@ public class VideoServiceImpl implements VideoService {
 	@Override
 	public List<VideoDetailsDTO> getAllVideos() {
 		// TODO Auto-generated method stub
-		return null;
+		return videoRepository.findAll().stream().map((v) -> {
+			VideoDetailsDTO dto = new VideoDetailsDTO(v.getVideoName(), v.getViews(), v.getContentType(),
+					v.getUploadUser().getUsername());
+			return dto;
+		}).collect(Collectors.toList());
+
 	}
 
 }
