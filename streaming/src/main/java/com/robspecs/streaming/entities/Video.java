@@ -67,6 +67,9 @@ public class Video {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "upload_user_id", nullable = false)
     private User uploadUser;
+    
+    @Column(nullable = false)
+    private Long views = 0L;
 
     // Constructors
     public Video() {
@@ -144,5 +147,12 @@ public class Video {
 
     public void setUploadUser(User uploadUser) {
         this.uploadUser = uploadUser;
+    }
+    public Long getViews() {
+        return views;
+    }
+
+    public void setViews(Long views) {
+        this.views = views;
     }
 }

@@ -12,12 +12,20 @@ import com.robspecs.streaming.entities.Video;
 
 public interface VideoService {
 
-	void uploadVideo(VideoUploadDTO v,User user) throws IOException;
-	VideoDetailsDTO getVideo(Long Id , User user);
-	VideoDetailsDTO searchByTitle(String videoName,User user);
-	Long updateViews(Long VideoId,User user);
-	//Admin
-	List<VideoDetailsDTO> getAllVideos();
-	
-	
+    // Updated return type: now returns the saved Video entity.
+    // IOException is now wrapped in FileStorageException (a RuntimeException),
+    // so it doesn't need to be declared here.
+    Video uploadVideo(VideoUploadDTO v, User user);
+
+    // This method will now fetch a single video's details for playback or display.
+    VideoDetailsDTO getVideo(Long Id , User user);
+
+    // For searching videos by title.
+    VideoDetailsDTO searchByTitle(String videoName, User user);
+
+    // This is where we'll implement the view count increment with pessimistic locking.
+    Long updateViews(Long videoId, User user);
+
+    // Admin function to get all videos.
+    List<VideoDetailsDTO> getAllVideos();
 }
