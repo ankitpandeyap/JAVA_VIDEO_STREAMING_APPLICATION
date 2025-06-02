@@ -139,16 +139,19 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 			}
 
 		} catch (BadCredentialsException e) {
-            logger.error("Authentication failed for user (Bad Credentials) or disabled account: {}", e.getMessage());
-            response.setStatus(HttpStatus.UNAUTHORIZED.value()); // 401 Unauthorized
-            response.setContentType("application/json");
-            // You might want to return a more generic "Invalid credentials" to avoid enumeration attacks
-            response.getWriter().write("{\"error\": \"Invalid username or password\"}");
+			logger.error("Authentication failed for user (Bad Credentials) or disabled account: {}", e.getMessage());
+			response.setStatus(HttpStatus.UNAUTHORIZED.value()); // 401 Unauthorized
+			response.setContentType("application/json");
+			// You might want to return a more generic "Invalid credentials" to avoid
+			// enumeration attacks
+			response.getWriter().write("{\"error\": \"Invalid username or password\"}");
 		} catch (Exception e) {
-            logger.error("Authentication failed due to unexpected error for request URI {}: {}", request.getRequestURI(), e.getMessage(), e);
-            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value()); // 500 Internal Server Error
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\": \"An unexpected error occurred during login. Please try again later.\"}");
+			logger.error("Authentication failed due to unexpected error for request URI {}: {}",
+					request.getRequestURI(), e.getMessage(), e);
+			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value()); // 500 Internal Server Error
+			response.setContentType("application/json");
+			response.getWriter()
+					.write("{\"error\": \"An unexpected error occurred during login. Please try again later.\"}");
 		}
 		logger.info("Exiting JWTAuthenticationFilter for request URI: {}", request.getRequestURI());
 	}

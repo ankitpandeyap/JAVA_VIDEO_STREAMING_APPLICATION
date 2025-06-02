@@ -1,0 +1,220 @@
+/* src/css/UploadVideoModal.css - NEW FILE FOR DARK THEME */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.7); /* Dark semi-transparent overlay */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Above everything else */
+    backdrop-filter: blur(5px); /* Optional: Adds a blur effect to content behind */
+}
+
+.modal-content {
+    background-color: var(--bg-color-medium); /* Dark card background for modal */
+    padding: 30px;
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6); /* Stronger shadow for modals */
+    width: 90%;
+    max-width: 600px;
+    color: var(--text-color-light); /* Light text within the modal */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+    animation: fadeInScale 0.3s ease-out forwards; /* Simple animation */
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+
+.modal-close-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 2rem; /* Larger close button */
+    color: var(--text-color-dark); /* Muted color for close button */
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.modal-close-button:hover {
+    color: var(--text-color-light); /* White on hover */
+    transform: rotate(90deg); /* Little spin on hover */
+}
+
+.upload-form h2 {
+    font-size: 1.8rem;
+    color: var(--primary-color); /* Title color */
+    margin-bottom: 25px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-color-medium); /* Muted light text for labels */
+}
+
+.form-group input[type="text"],
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color-light);
+    border-radius: var(--border-radius-sm);
+    background-color: var(--bg-color-light);
+    color: var(--text-color-light);
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.3);
+}
+
+/* Custom styling for file inputs if needed (optional) */
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color-light);
+    border-radius: var(--border-radius-sm);
+    background-color: var(--bg-color-light);
+    color: var(--text-color-medium); /* Muted color for file input text */
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.form-group input[type="file"]::file-selector-button {
+    background-color: var(--secondary-color);
+    color: var(--text-color-light);
+    border: none;
+    padding: 8px 12px;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    margin-right: 15px;
+    transition: background-color 0.3s ease;
+}
+
+.form-group input[type="file"]::file-selector-button:hover {
+    background-color: var(--primary-color);
+}
+
+.file-name {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.85rem;
+    color: var(--text-color-dark); /* Darker muted text for file names */
+}
+
+.progress-bar-container {
+    width: 100%;
+    background-color: var(--bg-color-light);
+    border-radius: var(--border-radius-sm);
+    height: 12px; /* Slightly taller progress bar */
+    overflow: hidden;
+    margin-top: 10px;
+    position: relative; /* For progress text positioning */
+}
+
+.progress-bar {
+    height: 100%;
+    background-color: var(--highlight-color); /* Bright green progress bar */
+    width: 0%; /* Controlled by JS */
+    transition: width 0.3s ease-out;
+    border-radius: var(--border-radius-sm); /* Match container radius */
+}
+
+.progress-text {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-color-dark); /* Text color inside progress bar or near it */
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5); /* For readability */
+}
+
+.upload-button {
+    background-color: var(--primary-color);
+    color: var(--text-color-light);
+    padding: 12px 20px;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 20px;
+    transition: background-color var(--transition), transform 0.2s ease;
+    width: 100%;
+}
+
+.upload-button:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-2px); /* More pronounced lift on hover */
+}
+
+.upload-button:disabled {
+    background-color: var(--bg-color-light);
+    color: var(--text-color-dark);
+    cursor: not-allowed;
+    transform: none;
+    opacity: 0.7;
+}
+
+.upload-error-message {
+    color: var(--accent-color); /* Error red */
+    font-size: 0.9rem;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.upload-success-message {
+    color: var(--highlight-color); /* Success green */
+    font-size: 0.9rem;
+    margin-top: 10px;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .modal-content {
+        padding: 20px;
+        border-radius: var(--border-radius-sm);
+        margin: 15px; /* Ensure some margin on very small screens */
+    }
+    .upload-form h2 {
+        font-size: 1.5rem;
+    }
+    .modal-close-button {
+        font-size: 1.8rem;
+        top: 10px;
+        right: 10px;
+    }
+}

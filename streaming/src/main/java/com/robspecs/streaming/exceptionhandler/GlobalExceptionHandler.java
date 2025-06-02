@@ -52,15 +52,11 @@ public class GlobalExceptionHandler {
 		return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN);
 	}
 
-
-
 	@ExceptionHandler(EncryptionDecryptionException.class)
 	public ResponseEntity<String> handleEncryptionDecryptionException(EncryptionDecryptionException ex) {
 		logger.error("EncryptionDecryptionException caught: {}", ex.getMessage(), ex);
 		return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 	}
-
-
 
 	/**
 	 * Handles UserAlreadyExistsException (HTTP 409 Conflict). Occurs when a user
@@ -177,9 +173,9 @@ public class GlobalExceptionHandler {
 		return new ResponseEntity<>("An unexpected internal server error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
-	  @ExceptionHandler(VideoRetrievalException.class)
-	    public ResponseEntity<String> handleInboxRetrievalException(VideoRetrievalException ex) {
-	        logger.error("InboxRetrievalException caught: {}", ex.getMessage(), ex);
-	        return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-	    }
+	@ExceptionHandler(VideoRetrievalException.class)
+	public ResponseEntity<String> handleInboxRetrievalException(VideoRetrievalException ex) {
+		logger.error("InboxRetrievalException caught: {}", ex.getMessage(), ex);
+		return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+	}
 }

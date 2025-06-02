@@ -7,9 +7,9 @@ import jakarta.validation.constraints.NotBlank;
 
 public class ForgotPasswordRequest {
 
-    @NotBlank(message = "Email cannot be empty")
-    @Email(message = "Invalid email format")
-    private String email;
+	@NotBlank(message = "Email cannot be empty")
+	@Email(message = "Invalid email format")
+	private String email;
 
 	public String getEmail() {
 		return email;
@@ -46,7 +46,5 @@ public class ForgotPasswordRequest {
 		ForgotPasswordRequest other = (ForgotPasswordRequest) obj;
 		return Objects.equals(email, other.email);
 	}
-
-
 
 }
