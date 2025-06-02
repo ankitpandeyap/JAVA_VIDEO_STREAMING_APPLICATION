@@ -1,102 +1,148 @@
 package com.robspecs.streaming.entities;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn; // Import JoinColumn
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import java.util.HashMap;
+import java.util.Map;
+import com.robspecs.streaming.entities.User;
+import com.robspecs.streaming.enums.VideoStatus;
+
+
 
 @Entity
-@Table(indexes = { @Index(name = "title_idx", columnList = "videoName", unique = true) })
+@Table(name = "videos",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uq_video_name_user", columnNames = {"videoName", "upload_user_id"})
+    },
+    indexes = {
+        @Index(name = "idx_video_name", columnList = "videoName"),
+        @Index(name = "idx_upload_user_id", columnList = "upload_user_id")
+    }
+)
 public class Video {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long videoId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long videoId;
 
-	@Column(nullable = false)
-	private String videoName;
+    @Column(nullable = false)
+    private String videoName;
 
-	@Column(nullable = false, columnDefinition = "TEXT", unique = true)
-	private String videoURL;
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String originalFilePath;
 
-	@Column(nullable = false)
-	// AtomicReference is unusual for an entity field, typically a Long is used and
-	// atomicity handled in service layer or with database mechanisms.
-	private Long views = 0L;
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
-	@Column(nullable = false)
-	private String contentType;
+    @Column(nullable = false)
+    private Long fileSize; // Size in bytes
 
-	@Column(columnDefinition = "TEXT")
-	private String description;
+   
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private VideoStatus status = VideoStatus.UPLOADED;
 
-	// Many-to-One relationship with User
-	// @JoinColumn defines the foreign key column in the 'videos' table
-	@ManyToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "upload_user_id", nullable = false) // Correct way to define the foreign key and its nullability
-	private User uploadUser;
+    private Long durationMillis;
 
-	// --- Getters and Setters ---
-	public Long getVideoId() {
-		return videoId;
-	}
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "video_resolutions", joinColumns = @JoinColumn(name = "video_id"))
+    @MapKeyColumn(name = "resolution_key")
+    @Column(name = "file_path", columnDefinition = "TEXT")
+    private Map<String, String> resolutionFilePaths = new HashMap<>();
 
-	public void setVideoId(Long videoId) {
-		this.videoId = videoId;
-	}
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "upload_user_id", nullable = false)
+    private User uploadUser;
 
-	public String getVideoName() {
-		return videoName;
-	}
+    // Constructors
+    public Video() {
+    }
 
-	public void setVideoName(String videoName) {
-		this.videoName = videoName;
-	}
+    // Getters and Setters
 
-	public String getVideoURL() {
-		return videoURL;
-	}
+    public Long getVideoId() {
+        return videoId;
+    }
 
-	public void setVideoURL(String videoURL) {
-		this.videoURL = videoURL;
-	}
+    public void setVideoId(Long videoId) {
+        this.videoId = videoId;
+    }
 
-	public Long getViews() {
-		return views;
-	}
+    public String getVideoName() {
+        return videoName;
+    }
 
-	public void setViews(Long views) {
-		this.views = views;
-	}
+    public void setVideoName(String videoName) {
+        this.videoName = videoName;
+    }
 
-	public String getContentType() {
-		return contentType;
-	}
+    public String getOriginalFilePath() {
+        return originalFilePath;
+    }
 
-	public void setContentType(String contentType) {
-		this.contentType = contentType;
-	}
+    public void setOriginalFilePath(String originalFilePath) {
+        this.originalFilePath = originalFilePath;
+    }
 
-	public User getUploadUser() {
-		return uploadUser;
-	}
+    public String getDescription() {
+        return description;
+    }
 
-	public void setUploadUser(User uploadUser) {
-		this.uploadUser = uploadUser;
-	}
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-	public String getDescription() {
-		return description;
-	}
+    public Long getFileSize() {
+        return fileSize;
+    }
 
-	public void setDescription(String description) {
-		this.description = description;
-	}
+    public void setFileSize(Long fileSize) {
+        this.fileSize = fileSize;
+    }
 
+    public VideoStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(VideoStatus status) {
+        this.status = status;
+    }
+
+    public Long getDurationMillis() {
+        return durationMillis;
+    }
+
+    public void setDurationMillis(Long durationMillis) {
+        this.durationMillis = durationMillis;
+    }
+
+    public Map<String, String> getResolutionFilePaths() {
+        return resolutionFilePaths;
+    }
+
+    public void setResolutionFilePaths(Map<String, String> resolutionFilePaths) {
+        this.resolutionFilePaths = resolutionFilePaths;
+    }
+
+    public User getUploadUser() {
+        return uploadUser;
+    }
+
+    public void setUploadUser(User uploadUser) {
+        this.uploadUser = uploadUser;
+    }
 }
