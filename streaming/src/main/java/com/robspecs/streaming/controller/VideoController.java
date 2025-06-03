@@ -37,13 +37,8 @@ public class VideoController {
 			return ResponseEntity.badRequest().body(Map.of("message", "No file provided"));
 		}
 
-		try {
-			videoService.uploadVideo(videoDTO, currentUser);
-			return ResponseEntity.ok(Map.of("message", "Upload successful"));
-		} catch (IOException e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(Map.of("error", "Upload failed: " + e.getMessage()));
-		}
+		videoService.uploadVideo(videoDTO, currentUser);
+		return ResponseEntity.ok(Map.of("message", "Upload successful"));
 
 	}
 }
