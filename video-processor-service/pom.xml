@@ -29,6 +29,7 @@
 	</scm>
 	<properties>
 		<java.version>17</java.version>
+		<bytedeco.version>1.5.9</bytedeco.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -57,6 +58,8 @@
 			<artifactId>jakarta.mail</artifactId>
 			<version>2.0.1</version>
 		</dependency>
+		
+		<!--
 		<dependency>
 			<groupId>ws.schild</groupId>
 			<artifactId>jave-core</artifactId>
@@ -64,8 +67,20 @@
 		</dependency>
 		<dependency>
 			<groupId>ws.schild</groupId>
-			<artifactId>jave-nativebin-linux64</artifactId>
+			<artifactId>jave-nativebin-win64</artifactId>
 			<version>3.5.0</version>
+		</dependency>
+		-->
+    
+		<dependency>
+			<groupId>org.bytedeco</groupId>
+			<artifactId>javacv-platform</artifactId>
+			<version>${bytedeco.version}</version>
+		</dependency>
+    
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
 		<dependency>

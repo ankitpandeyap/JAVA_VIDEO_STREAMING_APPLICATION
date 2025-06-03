@@ -1,4 +1,6 @@
-package com.robspecs.streaming.dto;
+package com.robspecs.videoprocessor.dto;
+
+
 
 import java.io.Serializable;
 
