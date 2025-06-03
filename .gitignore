@@ -3,7 +3,7 @@ target/
 .metadata/
 .settings/
 .factorypath
-Cryptography/logs
+streaming/logs
 
 
 # RAR archives
