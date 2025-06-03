@@ -5,8 +5,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
-
-
 @SpringBootApplication
 public class StreamingApplication extends SpringBootServletInitializer {
 
@@ -19,5 +17,4 @@ public class StreamingApplication extends SpringBootServletInitializer {
 		return application.sources(StreamingApplication.class);
 	}
 
-	
 }

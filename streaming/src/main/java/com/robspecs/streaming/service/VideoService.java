@@ -1,11 +1,11 @@
 package com.robspecs.streaming.service;
 
+import java.util.List;
+
 import com.robspecs.streaming.dto.VideoDetailsDTO;
 import com.robspecs.streaming.dto.VideoUploadDTO;
 import com.robspecs.streaming.entities.User;
 import com.robspecs.streaming.entities.Video;
-
-import java.util.List;
 
 public interface VideoService {
 
@@ -16,6 +16,8 @@ public interface VideoService {
     VideoDetailsDTO searchByTitle(String videoName, User user);
 
     Long updateViews(Long videoId, User user);
+
+    Video getActualVideoEntity(Long videoId, User user);
 
     List<VideoDetailsDTO> getAllVideos();
 

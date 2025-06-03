@@ -14,8 +14,6 @@ import com.robspecs.streaming.dto.UserProfileDTO;
 import com.robspecs.streaming.entities.User;
 import com.robspecs.streaming.service.UserService;
 
-
-
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -33,16 +31,18 @@ public class UserController {
 		return ResponseEntity.ok(users);
 	}
 
-	 @GetMapping("/me")
-	    public ResponseEntity<UserProfileDTO> getUserProfile(@AuthenticationPrincipal User currentUser) {
-	        if (currentUser == null) {
-	           // log.warn("Attempted to fetch user profile but no authenticated user found. This should be caught by Spring Security.");
-	            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-	        }
+	@GetMapping("/me")
+	public ResponseEntity<UserProfileDTO> getUserProfile(@AuthenticationPrincipal User currentUser) {
+		if (currentUser == null) {
+			// log.warn("Attempted to fetch user profile but no authenticated user found.
+			// This should be caught by Spring Security.");
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		}
 
-	     //   log.info("Fetching profile for authenticated user: {}", currentUser.getUserName());
-	        UserProfileDTO userProfile = userService.getUserProfile(currentUser.getUserName());
-	        return ResponseEntity.ok(userProfile);
-	    }
+		// log.info("Fetching profile for authenticated user: {}",
+		// currentUser.getUserName());
+		UserProfileDTO userProfile = userService.getUserProfile(currentUser.getUserName());
+		return ResponseEntity.ok(userProfile);
+	}
 
 }

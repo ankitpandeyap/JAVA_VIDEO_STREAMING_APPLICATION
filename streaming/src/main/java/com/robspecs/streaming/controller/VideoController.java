@@ -1,236 +1,286 @@
 package com.robspecs.streaming.controller;
 
-import com.robspecs.streaming.dto.VideoDetailsDTO;
-import com.robspecs.streaming.dto.VideoUploadDTO;
-import com.robspecs.streaming.entities.User;
-import com.robspecs.streaming.service.VideoService;
-import com.robspecs.streaming.exceptions.FileNotFoundException;
-import com.robspecs.streaming.service.FileStorageService; // For streaming directly
-import com.robspecs.streaming.entities.Video;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpRange;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpRange;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.CacheControl;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.robspecs.streaming.dto.VideoDetailsDTO;
+import com.robspecs.streaming.dto.VideoUploadDTO;
+import com.robspecs.streaming.entities.User;
+import com.robspecs.streaming.entities.Video;
+import com.robspecs.streaming.enums.VideoStatus; // Import VideoStatus
+import com.robspecs.streaming.exceptions.FileNotFoundException;
+import com.robspecs.streaming.service.FileStorageService;
+import com.robspecs.streaming.service.VideoService;
 
 @RestController
-@RequestMapping("/api/videos") // Changed to /api/videos for consistency and common practice
+@RequestMapping("/api/videos")
 public class VideoController {
 
-    private static final Logger logger = LoggerFactory.getLogger(VideoController.class);
+	private static final Logger logger = LoggerFactory.getLogger(VideoController.class);
 
-    private final VideoService videoService;
-    private final FileStorageService fileStorageService; // Inject FileStorageService for streaming
+	private final VideoService videoService;
+	private final FileStorageService fileStorageService;
 
-    public VideoController(VideoService videoService, FileStorageService fileStorageService) {
-        this.videoService = videoService;
-        this.fileStorageService = fileStorageService;
-    }
+	// Define file size thresholds in bytes for clarity
+	private static final long SMALL_VIDEO_THRESHOLD_BYTES = 10 * 1024 * 1024; // 10 MB
+	private static final long MEDIUM_VIDEO_THRESHOLD_BYTES = 50 * 1024 * 1024; // 50 MB
 
-    /**
-     * Handles video upload.
-     * POST /api/videos/upload
-     * Consumes multipart form data (file + title, description).
-     */
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadVideo(
-            @ModelAttribute VideoUploadDTO videoDTO,
-            @AuthenticationPrincipal User currentUser) {
+	public VideoController(VideoService videoService, FileStorageService fileStorageService) {
+		this.videoService = videoService;
+		this.fileStorageService = fileStorageService;
+	}
 
-        logger.info("Received video upload request for user: {}", currentUser.getUsername());
+	@PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<?> uploadVideo(@ModelAttribute VideoUploadDTO videoDTO,
+			@AuthenticationPrincipal User currentUser) {
 
-        if (videoDTO.getFile() == null || videoDTO.getFile().isEmpty()) {
-            logger.warn("No file provided in upload request by user: {}", currentUser.getUsername());
-            return ResponseEntity.badRequest().body(Map.of("message", "No file provided"));
-        }
+		logger.info("Received video upload request for user: {}", currentUser.getUsername());
 
-        try {
-            Video uploadedVideo = videoService.uploadVideo(videoDTO, currentUser);
-            logger.info("Video upload initiated for videoId: {}", uploadedVideo.getVideoId());
-            return ResponseEntity.ok(Map.of(
-                    "message", "Video upload initiated successfully. Processing will begin shortly.",
-                    "videoId", uploadedVideo.getVideoId(),
-                    "videoName", uploadedVideo.getVideoName()
-            ));
-        } catch (IllegalArgumentException e) {
-            logger.error("Video upload failed for user {}: {}", currentUser.getUsername(), e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Video upload failed: " + e.getMessage()));
-        } catch (Exception e) {
-            logger.error("An unexpected error occurred during video upload for user {}: {}", currentUser.getUsername(), e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An unexpected error occurred during upload."));
-        }
-    }
+		if (videoDTO.getFile() == null || videoDTO.getFile().isEmpty()) {
+			logger.warn("No file provided in upload request by user: {}", currentUser.getUsername());
+			return ResponseEntity.badRequest().body(Map.of("message", "No file provided"));
+		}
 
-    /**
-     * Retrieves details for a specific video.
-     * GET /api/videos/{videoId}
-     */
-    @GetMapping("/{videoId}")
-    public ResponseEntity<VideoDetailsDTO> getVideoDetails(
-            @PathVariable Long videoId,
-            @AuthenticationPrincipal User currentUser) { // Consider if public access is allowed without auth
-        logger.info("Fetching video details for videoId: {} by user: {}", videoId, currentUser.getUsername());
-        try {
-            VideoDetailsDTO videoDetails = videoService.getVideo(videoId, currentUser);
-            // Optionally increment views here or on stream request
-            // videoService.updateViews(videoId, currentUser); // If you want views incremented on detail fetch
-            return ResponseEntity.ok(videoDetails);
-        } catch (FileNotFoundException e) {
-            logger.warn("Video not found: {}", videoId);
-            throw e; // Let @ResponseStatus handle 404
-        } catch (Exception e) {
-            logger.error("Error fetching video details for videoId {}: {}", videoId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+		try {
+			Video uploadedVideo = videoService.uploadVideo(videoDTO, currentUser);
+			logger.info("Video upload initiated for videoId: {}", uploadedVideo.getVideoId());
+			return ResponseEntity
+					.ok(Map.of("message", "Video upload initiated successfully. Processing will begin shortly.",
+							"videoId", uploadedVideo.getVideoId(), "videoName", uploadedVideo.getVideoName()));
+		} catch (IllegalArgumentException e) {
+			logger.error("Video upload failed for user {}: {}", currentUser.getUsername(), e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+					.body(Map.of("message", "Video upload failed: " + e.getMessage()));
+		} catch (Exception e) {
+			logger.error("An unexpected error occurred during video upload for user {}: {}", currentUser.getUsername(),
+					e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(Map.of("message", "An unexpected error occurred during upload."));
+		}
+	}
 
-    /**
-     * Searches for a video by title for the current user.
-     * GET /api/videos/search?title={videoTitle}
-     */
-    @GetMapping("/search")
-    public ResponseEntity<VideoDetailsDTO> searchVideoByTitle(
-            @RequestParam String title,
-            @AuthenticationPrincipal User currentUser) {
-        logger.info("Searching for video with title: {} by user: {}", title, currentUser.getUsername());
-        try {
-            VideoDetailsDTO videoDetails = videoService.searchByTitle(title, currentUser);
-            return ResponseEntity.ok(videoDetails);
-        } catch (FileNotFoundException e) {
-            logger.warn("Video with title '{}' not found for user: {}", title, currentUser.getUsername());
-            throw e; // Let @ResponseStatus handle 404
-        } catch (Exception e) {
-            logger.error("Error searching video by title '{}' for user {}: {}", title, currentUser.getUsername(), e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+	@GetMapping("/{videoId}")
+	public ResponseEntity<VideoDetailsDTO> getVideoDetails(@PathVariable Long videoId,
+			@AuthenticationPrincipal User currentUser) {
+		logger.info("Fetching video details for videoId: {} by user: {}", videoId, currentUser.getUsername());
+		try {
+			// This method calls the VideoService.getVideo which returns a DTO
+			VideoDetailsDTO videoDetails = videoService.getVideo(videoId, currentUser);
+			return ResponseEntity.ok(videoDetails);
+		} catch (FileNotFoundException e) {
+			logger.warn("Video not found: {}", videoId);
+			throw e;
+		} catch (SecurityException e) {
+			logger.warn("Access denied for videoId {} to user {}: {}", videoId, currentUser.getUsername(),
+					e.getMessage());
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		} catch (Exception e) {
+			logger.error("Error fetching video details for videoId {}: {}", videoId, e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
 
-    /**
-     * Increments video views.
-     * PATCH /api/videos/{videoId}/views
-     */
-    @PatchMapping("/{videoId}/views")
-    public ResponseEntity<Long> incrementVideoViews(
-            @PathVariable Long videoId,
-            @AuthenticationPrincipal User currentUser) {
-        logger.info("Incrementing views for videoId: {} by user: {}", videoId, currentUser.getUsername());
-        try {
-            Long updatedViews = videoService.updateViews(videoId, currentUser);
-            return ResponseEntity.ok(updatedViews);
-        } catch (FileNotFoundException e) {
-            logger.warn("Video not found for view increment: {}", videoId);
-            throw e; // Let @ResponseStatus handle 404
-        } catch (Exception e) {
-            logger.error("Error incrementing views for videoId {}: {}", videoId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+	@GetMapping("/search")
+	public ResponseEntity<VideoDetailsDTO> searchVideoByTitle(@RequestParam String title,
+			@AuthenticationPrincipal User currentUser) {
+		logger.info("Searching for video with title: {} by user: {}", title, currentUser.getUsername());
+		try {
+			VideoDetailsDTO videoDetails = videoService.searchByTitle(title, currentUser);
+			return ResponseEntity.ok(videoDetails);
+		} catch (FileNotFoundException e) {
+			logger.warn("Video with title '{}' not found for user: {}", title, currentUser.getUsername());
+			throw e;
+		} catch (SecurityException e) {
+			logger.warn("Access denied for video title '{}' to user {}: {}", title, currentUser.getUsername(),
+					e.getMessage());
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		} catch (Exception e) {
+			logger.error("Error searching video by title '{}' for user {}: {}", title, currentUser.getUsername(),
+					e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
 
-    /**
-     * Retrieves a list of all videos (e.g., for an admin dashboard or user's library).
-     * GET /api/videos
-     */
-    @GetMapping
-    public ResponseEntity<List<VideoDetailsDTO>> getAllVideos(@AuthenticationPrincipal User currentUser) {
-        logger.info("Fetching all videos for user: {}", currentUser.getUsername()); // Or remove currentUser if this is admin-only
-        try {
-            // Implement logic here if this should be filtered by user, otherwise, get all.
-            // For now, assuming it returns all videos the current user can see or that are public.
-            // Adjust the service method if needed for user-specific listing.
-            List<VideoDetailsDTO> videos = videoService.getAllVideos();
-            return ResponseEntity.ok(videos);
-        } catch (Exception e) {
-            logger.error("Error fetching all videos: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+	@PatchMapping("/{videoId}/views")
+	public ResponseEntity<Long> incrementVideoViews(@PathVariable Long videoId,
+			@AuthenticationPrincipal User currentUser) {
+		logger.info("Incrementing views for videoId: {} by user: {}", videoId, currentUser.getUsername());
+		try {
+			Long updatedViews = videoService.updateViews(videoId, currentUser);
+			return ResponseEntity.ok(updatedViews);
+		} catch (FileNotFoundException e) {
+			logger.warn("Video not found for view increment: {}", videoId);
+			throw e;
+		} catch (SecurityException e) {
+			logger.warn("Access denied for view increment on videoId {} to user {}: {}", videoId,
+					currentUser.getUsername(), e.getMessage());
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		} catch (Exception e) {
+			logger.error("Error incrementing views for videoId {}: {}", videoId, e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
 
-    /**
-     * Streams video content (supports HTTP range requests for seeking).
-     * This endpoint should primarily be used for *processed* (HLS) content.
-     * GET /api/videos/stream/{videoId}
-     *
-     * Note: This is a simplified direct file stream. For HLS, the master playlist
-     * will reference segments, and a separate endpoint or clever path resolution
-     * will be needed to serve those.
-     */
-    @GetMapping("/stream/{videoId}")
-    public ResponseEntity<Resource> streamVideo(
-            @PathVariable Long videoId,
-            @RequestHeader HttpHeaders headers,
-            @AuthenticationPrincipal User currentUser) { // User authentication for streaming
+	@GetMapping
+	public ResponseEntity<List<VideoDetailsDTO>> getAllVideos(@AuthenticationPrincipal User currentUser) {
+		logger.info("Fetching all videos (admin view or user's videos) for user: {}", currentUser.getUsername());
+		try {
+			List<VideoDetailsDTO> videos = videoService.getAllVideos();
+			return ResponseEntity.ok(videos);
+		} catch (Exception e) {
+			logger.error("Error fetching all videos: {}", e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
 
-        logger.info("Stream request for videoId: {} by user: {}", videoId, currentUser.getUsername());
-        try {
-            // 1. Get Video details from DB to find the HLS master playlist path
-            Video video = videoService.getVideoByFilePath(null); // We need a method to get video by ID and then resolve its HLS path
+	@GetMapping("/stream/{videoId}")
+	public ResponseEntity<Resource> streamVideo(@PathVariable Long videoId,
+			@RequestParam(required = false) String fileName, // Optional for HLS segments/other resolutions
+			@RequestHeader HttpHeaders headers, @AuthenticationPrincipal User currentUser) {
 
-            // For now, let's assume we want to stream the master.m3u8 from HLS processed path.
-            // In a real scenario, you'd retrieve the HLS master playlist path from the Video entity.
-            // Example: String hlsMasterPlaylistRelativePath = video.getResolutionFilePaths().get("hls_master");
-            // For now, let's hardcode a path that assumes it's within the file storage.
-            // **IMPORTANT:** You need to update `Video` entity and `VideoProcessingService` to store
-            // the HLS master playlist path (e.g., `users/username/videos/processed/videoId/hls/master.m3u8`).
-            // For demonstration, let's use a dummy path structure which assumes `videoId` maps to its HLS folder
-            // and `master.m3u8` is inside.
-            String relativeHlsPath = "users/" + currentUser.getUsername() + "/videos/processed/" + videoId + "/hls/master.m3u8";
-            // In a production app, fetch this from `video.getResolutionFilePaths()` map (e.g., `video.getResolutionFilePaths().get("hls_master")`)
-            // after the video processing service has updated it.
+		logger.info("Stream request for videoId: {} with fileName: {} by user: {}", videoId, fileName,
+				currentUser.getUsername());
 
-            // 2. Load the HLS master playlist or a segment as a resource
-            Path filePath = fileStorageService.getFilePath(relativeHlsPath);
-            Resource resource = fileStorageService.loadFileAsResource(relativeHlsPath); // This will throw FileNotFound if not found
+		try {
+			// 1. Get the actual Video entity from DB for internal logic (file size, paths)
+			Video video = videoService.getActualVideoEntity(videoId, currentUser); // <--- CALLING THE NEW METHOD
 
-            // 3. Handle Range Requests (important for video seeking)
-            long contentLength = resource.contentLength();
-            List<HttpRange> ranges = headers.getRange();
+			// Ensure video processing is at least 'ENCODING' or 'READY' for streaming
+			if (video.getStatus() == VideoStatus.UPLOADED || video.getStatus() == VideoStatus.PROCESSING) {
+				logger.warn("Video {} is not ready for streaming. Current status: {}", videoId, video.getStatus());
+				return ResponseEntity.status(HttpStatus.LOCKED).body(null);
+			}
 
-            if (ranges.isEmpty() || !resource.isReadable()) {
-                 return ResponseEntity.ok()
-                        .contentType(MediaType.parseMediaType("application/x-mpegURL")) // For .m3u8
-                        .contentLength(contentLength)
-                        .body(resource);
-            }
+			String relativeFilePathToServe;
+			MediaType contentType;
+			long actualFileSize;
 
-            // For range requests, return a 206 Partial Content
-            HttpRange range = ranges.get(0); // Take the first range, as most players request one
-            long start = range.getRangeStart(contentLength);
-            long end = range.getRangeEnd(contentLength);
-            long rangeLength = end - start + 1;
+			if (fileName != null && !fileName.isEmpty()) {
+				// This branch handles requests for specific HLS segments (.ts) or playlists
+				// (e.g., 720p/playlist.m3u8)
+				String hlsBasePath = video.getResolutionFilePaths().get("hls_base");
+				if (hlsBasePath == null) {
+					logger.error("HLS base path not found for videoId: {}. Cannot serve specific HLS file: {}", videoId,
+							fileName);
+					return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+				}
+				relativeFilePathToServe = hlsBasePath + "/" + fileName;
 
-            return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
-                    .header(HttpHeaders.CONTENT_TYPE, "application/x-mpegURL") // For .m3u8
-                    .header(HttpHeaders.ACCEPT_RANGES, "bytes")
-                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(rangeLength))
-                    .header(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + contentLength)
-                    .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).noTransform().mustRevalidate())
-                    .body(fileStorageService.loadFileAsResource(relativeHlsPath)); // Load the resource again for the specified range
-                                                                                   // (UrlResource can handle byte ranges automatically)
+				if (fileName.endsWith(".m3u8")) {
+					contentType = MediaType.parseMediaType("application/x-mpegURL");
+				} else if (fileName.endsWith(".ts")) {
+					contentType = MediaType.parseMediaType("video/MP2T");
+				} else if (fileName.endsWith(".mp4")) {
+					contentType = MediaType.parseMediaType("video/mp4");
+				} else {
+					contentType = MediaType.APPLICATION_OCTET_STREAM;
+				}
 
-        } catch (FileNotFoundException e) {
-            logger.warn("Stream file not found for videoId {}: {}", videoId, e.getMessage());
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            logger.error("Error streaming videoId {}: {}", videoId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+				Path actualPath = fileStorageService.getFilePath(relativeFilePathToServe);
+				actualFileSize = Files.size(actualPath);
+				logger.debug("Serving specific file: {} (size: {}) for videoId: {}", relativeFilePathToServe,
+						actualFileSize, videoId);
+
+			} else {
+				// This branch handles the initial stream request (no specific fileName)
+				actualFileSize = video.getFileSize();
+				logger.debug("Original video size: {} for videoId: {}", actualFileSize, videoId);
+
+				if (actualFileSize < SMALL_VIDEO_THRESHOLD_BYTES) {
+					logger.info("Serving full video (small, {} bytes) for videoId: {}", actualFileSize, videoId);
+					relativeFilePathToServe = video.getOriginalFilePath();
+					contentType = MediaType.parseMediaType("video/mp4");
+					return ResponseEntity.ok()
+							.header(HttpHeaders.CONTENT_DISPOSITION,
+									"attachment; filename=\"" + video.getVideoName() + ".mp4\"")
+							.contentType(contentType).contentLength(actualFileSize)
+							.body(fileStorageService.loadFileAsResource(relativeFilePathToServe));
+
+				} else if (actualFileSize <= MEDIUM_VIDEO_THRESHOLD_BYTES) { // Includes 10MB to 50MB
+					logger.info("Serving byte-range video (medium, {} bytes) for videoId: {}", actualFileSize, videoId);
+					relativeFilePathToServe = video.getOriginalFilePath();
+					contentType = MediaType.parseMediaType("video/mp4");
+
+				} else { // actualFileSize > MEDIUM_VIDEO_THRESHOLD_BYTES (more than 50MB)
+					logger.info("Serving HLS stream (large, {} bytes) for videoId: {}", actualFileSize, videoId);
+					String hlsMasterPlaylistPath = video.getResolutionFilePaths().get("hls_master");
+					if (hlsMasterPlaylistPath == null) {
+						logger.error("HLS master playlist path not found for large videoId: {}", videoId);
+						// If HLS isn't processed yet or path is missing, fallback to original or error
+						// For now, returning NOT_FOUND as per requirements
+						return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+					}
+					relativeFilePathToServe = hlsMasterPlaylistPath;
+					contentType = MediaType.parseMediaType("application/x-mpegURL");
+				}
+			}
+
+			Resource resource = fileStorageService.loadFileAsResource(relativeFilePathToServe);
+
+			List<HttpRange> ranges = headers.getRange();
+
+			if (ranges.isEmpty()
+					|| actualFileSize < MEDIUM_VIDEO_THRESHOLD_BYTES && actualFileSize > SMALL_VIDEO_THRESHOLD_BYTES) {
+				// For files < 10MB, we already returned a full download.
+				// For files 10-50MB, we always handle range requests.
+				// For HLS, the initial request might not have ranges for .m3u8, but segments
+				// will.
+				return ResponseEntity.ok().contentType(contentType).contentLength(actualFileSize).body(resource);
+			}
+
+			HttpRange range = ranges.get(0);
+			long start = range.getRangeStart(actualFileSize);
+			long end = range.getRangeEnd(actualFileSize);
+			long rangeLength = end - start + 1;
+
+			logger.debug("Serving byte range {}-{} (length: {}) for file: {}", start, end, rangeLength,
+					relativeFilePathToServe);
+
+			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
+					.header(HttpHeaders.CONTENT_TYPE, contentType.toString()).header(HttpHeaders.ACCEPT_RANGES, "bytes")
+					.header(HttpHeaders.CONTENT_LENGTH, String.valueOf(rangeLength))
+					.header(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + actualFileSize)
+					.cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).noTransform().mustRevalidate())
+					.body(fileStorageService.loadFileAsResource(relativeFilePathToServe));
+
+		} catch (FileNotFoundException e) {
+			logger.warn("Stream file not found for videoId {} / fileName {}: {}", videoId, fileName, e.getMessage());
+			return ResponseEntity.notFound().build();
+		} catch (SecurityException e) {
+			logger.warn("Access denied for streaming videoId {} to user {}: {}", videoId, currentUser.getUsername(),
+					e.getMessage());
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		} catch (IOException e) {
+			logger.error("IO error streaming videoId {} / fileName {}: {}", videoId, fileName, e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		} catch (Exception e) {
+			logger.error("An unexpected error occurred during streaming videoId {} / fileName {}: {}", videoId,
+					fileName, e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
 }

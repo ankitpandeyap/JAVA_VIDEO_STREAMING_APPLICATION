@@ -19,35 +19,36 @@ import java.util.Map;
 @Configuration
 public class KafkaConsumerConfig {
 
-    @Value("${spring.kafka.bootstrap-servers}")
-    private String bootstrapServers;
+	@Value("${spring.kafka.bootstrap-servers}")
+	private String bootstrapServers;
 
-    @Value("${spring.kafka.consumer.group-id}")
-    private String groupId;
+	@Value("${spring.kafka.consumer.group-id}")
+	private String groupId;
 
-    @Bean
-    public ConsumerFactory<String, VideoProcessingRequest> consumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+	@Bean
+	public ConsumerFactory<String, VideoProcessingRequest> consumerFactory() {
+		Map<String, Object> props = new HashMap<>();
+		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+		props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 
-        // Configure JsonDeserializer for the value
-        JsonDeserializer<VideoProcessingRequest> jsonDeserializer = new JsonDeserializer<>(VideoProcessingRequest.class);
-        jsonDeserializer.setRemoveTypeHeaders(false); // Keep type headers for safer deserialization
-        jsonDeserializer.addTrustedPackages("*"); // Trust all packages for deserialization
-        jsonDeserializer.setUseTypeHeaders(false);
+		// Configure JsonDeserializer for the value
+		JsonDeserializer<VideoProcessingRequest> jsonDeserializer = new JsonDeserializer<>(
+				VideoProcessingRequest.class);
+		jsonDeserializer.setRemoveTypeHeaders(false); // Keep type headers for safer deserialization
+		jsonDeserializer.addTrustedPackages("*"); // Trust all packages for deserialization
+		jsonDeserializer.setUseTypeHeaders(false);
 
-        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), jsonDeserializer);
-    }
+		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), jsonDeserializer);
+	}
 
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, VideoProcessingRequest> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, VideoProcessingRequest> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory());
-        // Set concurrency if you want multiple threads/consumers in the same app instance
-        // factory.setConcurrency(3);
-        return factory;
-    }
+	@Bean
+	public ConcurrentKafkaListenerContainerFactory<String, VideoProcessingRequest> kafkaListenerContainerFactory() {
+		ConcurrentKafkaListenerContainerFactory<String, VideoProcessingRequest> factory = new ConcurrentKafkaListenerContainerFactory<>();
+		factory.setConsumerFactory(consumerFactory());
+		// Set concurrency if you want multiple threads/consumers in the same app
+		// instance
+		// factory.setConcurrency(3);
+		return factory;
+	}
 }

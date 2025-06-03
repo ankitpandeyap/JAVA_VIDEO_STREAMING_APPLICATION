@@ -1,10 +1,11 @@
 // src/main/java/com/robspecs/streaming/service/FileStorageService.java
 package com.robspecs.streaming.service;
 
-import org.springframework.core.io.Resource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+
+import org.springframework.core.io.Resource;
 
 public interface FileStorageService {
 
