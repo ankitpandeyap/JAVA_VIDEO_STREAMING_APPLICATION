@@ -3,6 +3,9 @@ package com.robspecs.videoprocessor.service;
 
 import com.robspecs.streaming.exception.FileNotFoundException; // Reuse your custom exception
 import com.robspecs.streaming.exception.FileStorageException; // Reuse your custom exception
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -21,7 +24,7 @@ import java.util.stream.Stream;
 
 @Service
 public class FileStorageService {
-
+	  private static final Logger logger = LoggerFactory.getLogger(FileStorageService.class);
 	private final Path fileStorageLocation;
 
 	public FileStorageService(@Value("${files.video.base-path}") String uploadDir) {
@@ -172,16 +175,28 @@ public class FileStorageService {
 	 *                              location.
 	 */
 	public boolean deleteFile(String relativeFilePath) throws IOException {
-		if (!StringUtils.hasText(relativeFilePath)) {
-			return false; // Nothing to delete
-		}
-		Path filePath = resolvePath(relativeFilePath); // Use resolvePath for validation
-		if (Files.exists(filePath)) {
-			Files.delete(filePath);
-			return true;
-		}
-		return false;
-	}
+        if (!StringUtils.hasText(relativeFilePath)) {
+            logger.warn("Attempted to delete a file with an empty or null relative path.");
+            return false;
+        }
+        Path filePath = resolvePath(relativeFilePath); // Use resolvePath for validation and absolute path
+        
+        if (!Files.exists(filePath)) {
+            logger.info("File to delete does not exist: {}", filePath);
+            return false;
+        }
+
+        try {
+            Files.delete(filePath);
+            return true;
+        } catch (IOException e) {
+            // Log the actual error that prevented deletion
+            logger.error("Failed to delete file {}. It might be in use or permissions are insufficient. Error: {}", filePath, e.getMessage());
+            // Re-throw the IOException so the calling service can handle it,
+            // e.g., mark video as FAILED or log a warning if deletion isn't critical.
+            throw e; // Important: Re-throw to propagate the failure
+        }
+    }
 
 	/**
 	 * Copies a file from a source absolute path to a destination absolute path.
