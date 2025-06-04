@@ -13,30 +13,70 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 export default function App() {
-  const location = useLocation(); // 🔍 Detect current route
+  const location = useLocation();
+  const { isAuthenticated, loadingAuth } = useContext(AuthContext);
+
+  // Conditional redirect for the root path (/)
+   const renderRootRoute = () => {
+    if (loadingAuth) {
+      // Render the LoadingSpinner while authentication status is being determined
+      // Wrap it in a div for full-screen centering if needed, or adjust LoadingSpinner's own CSS
+      return (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh', // Take full viewport height
+          backgroundColor: 'var(--bg-color-dark)' // Match app background
+        }}>
+          <LoadingSpinner message="Checking authentication..." />
+        </div>
+      );
+    }
+    // Once loadingAuth is false, navigate based on isAuthenticated
+    return isAuthenticated ? <Navigate to="/dashboard" /> : <Navigate to="/login" />;
+  };
 
   return (
     <>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
+        {/* Root path: Redirect based on authentication status */}
+        <Route path="/" element={renderRootRoute()} />
+
+        {/* Public Routes */}
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
-
-        {/* --- NEW ROUTES FOR PASSWORD RESET --- */}
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        {/* Important: This path must match the one in your backend's application.properties */}
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
+        {/* Protected Routes */}
         <Route
-          path="/profile" // <--- NEW ROUTE PATH
+          path="/dashboard"
           element={
             <ProtectedRoute>
-              <ProfilePage />{" "}
-              {/* <--- Renders your new ProfilePage component */}
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/videos/:videoId" // Dynamic route for video playback
+          element={
+            <ProtectedRoute>
+              <VideoPlayerPage />
             </ProtectedRoute>
           }
         />
       </Routes>
+
+      {/* Footer only on the login page */}
       {location.pathname === "/login" && <Footer />}
       <ToastContainer position="top-center" autoClose={1000} />
     </>
