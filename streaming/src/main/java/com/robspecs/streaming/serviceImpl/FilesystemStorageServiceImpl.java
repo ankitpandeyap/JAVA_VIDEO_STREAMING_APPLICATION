@@ -25,12 +25,7 @@ import jakarta.annotation.PostConstruct;
 public class FilesystemStorageServiceImpl implements FileStorageService {
 
 	private final Path fileStorageLocation;
-	private final String videoBasePath; // Store the raw string from properties
-
 	public FilesystemStorageServiceImpl(@Value("${files.video.base-path}") String videoBasePath) {
-		// Normalize the base path to ensure consistency (e.g., handles trailing
-		// slashes)
-		this.videoBasePath = videoBasePath;
 		this.fileStorageLocation = Paths.get(videoBasePath).toAbsolutePath().normalize();
 	}
 
@@ -44,13 +39,13 @@ public class FilesystemStorageServiceImpl implements FileStorageService {
 					ex);
 		}
 	}
-
+	
 	@Override
-	public String storeFile(InputStream inputStream, String fileName, String username, String typeSubdirectory)
+	public String storeFile(InputStream inputStream, String fileName, Long userId, String typeSubdirectory)
 			throws IOException {
 		// Clean filename and username to prevent path traversal attacks
 		String cleanFileName = StringUtils.cleanPath(Objects.requireNonNull(fileName));
-		String cleanUsername = StringUtils.cleanPath(Objects.requireNonNull(username));
+		String cleanUsername = StringUtils.cleanPath(Objects.requireNonNull(userId.toString()));
 
 		// Construct the target directory path:
 		// base_path/username/videos/[typeSubdirectory]/

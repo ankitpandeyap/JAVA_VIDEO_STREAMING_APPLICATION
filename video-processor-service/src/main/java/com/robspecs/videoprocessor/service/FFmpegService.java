@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Service
@@ -108,22 +109,34 @@ public class FFmpegService {
 	 *         "users/username/videos/processed/videoId/hls/master.m3u8").
 	 * @throws VideoProcessingException if an error occurs during transcoding.
 	 */
-	public String transcodeToHLS(Path originalVideoPath, Long videoId, String username) {
+	public String transcodeToHLS(Path originalVideoPath, Long videoId, Long userId) {
 		File source = originalVideoPath.toFile();
-
+     
 		if (!source.exists() || !source.canRead()) {
 			throw new VideoProcessingException("Source video file not found or not readable: " + originalVideoPath);
 		}
 
-		// Define output directory: users/username/videos/processed/videoId/hls/
-		// THESE LINES REMAIN UNCHANGED FROM YOUR ORIGINAL LOGIC
-		String relativeOutputDir = "users/" + username + "/videos/processed/" + videoId + "/hls/";
-		Path outputDirPath = fileStorageService.createDirectory("users", username, "videos", "processed",
-				String.valueOf(videoId), "hls");
-		// Define the output file for the master playlist within the target directory
-		File targetMasterPlaylist = outputDirPath.resolve("master.m3u8").toFile();
+		// Use the dedicated method to get the base processed video directory for this user and video
+        Path processedUserVideoDir = fileStorageService.getProcessedVideoDirectory(userId, videoId);
+        
+        // Resolve the HLS subdirectory within that processed video directory
+        Path hlsOutputBaseDir = processedUserVideoDir.resolve("hls");
 
-		// Set FFmpeg executable path if provided (optional, Bytedeco usually
+        // Ensure the HLS output directory exists (important!)
+        try {
+            Files.createDirectories(hlsOutputBaseDir);
+        } catch (Exception e) {
+            logger.error("Failed to create HLS output directory {}: {}", hlsOutputBaseDir, e.getMessage());
+            throw new VideoProcessingException("Failed to create HLS output directory.", e);
+        }
+
+        // Define the master playlist file path within the HLS output base directory
+        File targetMasterPlaylist = hlsOutputBaseDir.resolve("master.m3u8").toFile();
+
+        // The relative path to return (for database storage)
+        String hlsMasterPlaylistRelativePath = fileStorageService.getRelativePath(targetMasterPlaylist.toPath());
+		
+        // Set FFmpeg executable path if provided (optional, Bytedeco usually
 		// auto-detects)
 		if (ffmpegExecutablePath != null && !ffmpegExecutablePath.isEmpty()) {
 			logger.debug(

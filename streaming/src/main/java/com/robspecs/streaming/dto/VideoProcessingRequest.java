@@ -10,17 +10,19 @@ public class VideoProcessingRequest implements Serializable {
 	private String originalFilePath; // Path/URL to the raw video file in cloud storage
 	private Long fileSize; // Size of the original video file
 	private String uploadUserEmailorUsername; // Email of the user who uploaded the video
+	private Long uploadUserId;
 
 	// Default constructor for deserialization
 	public VideoProcessingRequest() {
 	}
 
 	public VideoProcessingRequest(Long videoId, String originalFilePath, Long fileSize,
-			String uploadUserEmailorUsername) {
+			String uploadUserEmailorUsername,Long uploadUserId) {
 		this.videoId = videoId;
 		this.originalFilePath = originalFilePath;
 		this.fileSize = fileSize;
 		this.uploadUserEmailorUsername = uploadUserEmailorUsername;
+		this.uploadUserId=uploadUserId;
 	}
 
 	// Getters
@@ -55,6 +57,16 @@ public class VideoProcessingRequest implements Serializable {
 
 	public void setUploadUserEmailOrUsername(String uploadUserEmailorUsername) {
 		this.uploadUserEmailorUsername = uploadUserEmailorUsername;
+	}
+	
+	
+
+	public Long getUploadUserId() {
+		return uploadUserId;
+	}
+
+	public void setUploadUserId(Long uploadUserId) {
+		this.uploadUserId = uploadUserId;
 	}
 
 	@Override

@@ -73,7 +73,7 @@ public class VideoServiceImpl implements VideoService {
 		try (InputStream fileStream = file.getInputStream()) {
 			// 2. Save the original video file to your configured filesystem
 			// Store it in the "raw" subdirectory within the user's video folder
-			originalFilePath = fileStorageService.storeFile(fileStream, uniqueFileName, user.getUsername(), "raw");
+			originalFilePath = fileStorageService.storeFile(fileStream, uniqueFileName, user.getUserId(), "raw");
 			logger.info("Original video file stored at: {} for user: {}", originalFilePath, user.getUsername());
 
 		} catch (IOException ex) {
@@ -96,7 +96,7 @@ public class VideoServiceImpl implements VideoService {
 
 		// 4. Publish a message to Kafka
 		VideoProcessingRequest request = new VideoProcessingRequest(newVideo.getVideoId(),
-				newVideo.getOriginalFilePath(), newVideo.getFileSize(), user.getUsername());
+				newVideo.getOriginalFilePath(), newVideo.getFileSize(), user.getEmail(),user.getUserId());
 
 		// Send message to Kafka. The key can be videoId (as String) for
 		// partitioning/ordering

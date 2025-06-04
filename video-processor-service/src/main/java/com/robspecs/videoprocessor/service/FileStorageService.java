@@ -145,4 +145,78 @@ public class FileStorageService {
 			throw new FileStorageException("Failed to read stored files", e);
 		}
 	}
+
+	/**
+	 * Gets the absolute path to the processed video directory for a specific video.
+	 * This path is structured as: base_path/username/videos/processed/videoId/
+	 *
+	 * @param uuserid The userId of the video uploader.
+	 * @param videoId  The ID of the video.
+	 * @return The absolute Path object for the processed video directory.
+	 */
+	public Path getProcessedVideoDirectory(Long userId, Long videoId) {
+		String cleanUsername = StringUtils.cleanPath(userId.toString());
+		return this.fileStorageLocation.resolve(cleanUsername).resolve("videos").resolve("processed")
+				.resolve(String.valueOf(videoId)).normalize();
+	}
+
+	/**
+	 * Deletes a single file given its relative path.
+	 *
+	 * @param relativeFilePath The relative path of the file to delete from the base
+	 *                         storage location.
+	 * @return true if the file was deleted, false otherwise (e.g., file didn't
+	 *         exist).
+	 * @throws IOException          if an I/O error occurs during deletion.
+	 * @throws FileStorageException if the path is outside the allowed storage
+	 *                              location.
+	 */
+	public boolean deleteFile(String relativeFilePath) throws IOException {
+		if (!StringUtils.hasText(relativeFilePath)) {
+			return false; // Nothing to delete
+		}
+		Path filePath = resolvePath(relativeFilePath); // Use resolvePath for validation
+		if (Files.exists(filePath)) {
+			Files.delete(filePath);
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Copies a file from a source absolute path to a destination absolute path.
+	 *
+	 * @param sourcePath      The absolute Path of the source file.
+	 * @param destinationPath The absolute Path of the destination file.
+	 * @return The absolute Path of the copied file.
+	 * @throws IOException          if an I/O error occurs during the copy
+	 *                              operation.
+	 * @throws FileStorageException if source or destination paths are outside
+	 *                              allowed storage location.
+	 */
+	public Path copyFile(Path sourcePath, Path destinationPath) throws IOException {
+		// Ensure source and destination are within the base storage location
+		if (!sourcePath.startsWith(this.fileStorageLocation) || !destinationPath.startsWith(this.fileStorageLocation)) {
+			throw new FileStorageException("Attempted to copy file to/from outside of storage directory.");
+		}
+		Files.createDirectories(destinationPath.getParent()); // Ensure parent directory exists
+		return Files.copy(sourcePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
+	}
+
+	/**
+	 * Converts an absolute Path object to a relative path string based on the base
+	 * storage location.
+	 *
+	 * @param absolutePath The absolute Path to convert.
+	 * @return The relative path string.
+	 * @throws FileStorageException if the absolute path is not within the base
+	 *                              storage location.
+	 */
+	public String getRelativePath(Path absolutePath) {
+		if (!absolutePath.startsWith(this.fileStorageLocation)) {
+			throw new FileStorageException(
+					"Attempted to get relative path for a path outside of storage directory: " + absolutePath);
+		}
+		return this.fileStorageLocation.relativize(absolutePath).toString();
+	}
 }
