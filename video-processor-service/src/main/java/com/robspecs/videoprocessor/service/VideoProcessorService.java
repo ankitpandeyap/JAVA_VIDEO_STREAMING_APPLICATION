@@ -1,24 +1,24 @@
 package com.robspecs.videoprocessor.service;
 
-import com.robspecs.streaming.entities.Video;
-import com.robspecs.streaming.enums.VideoStatus;
-import com.robspecs.streaming.repository.VideosRepository;
-import com.robspecs.videoprocessor.dto.VideoProcessingRequest;
-import com.robspecs.videoprocessor.exception.VideoProcessingException;
-import com.robspecs.videoprocessor.dto.VideoMetadata;
-
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.robspecs.streaming.entities.Video;
+import com.robspecs.streaming.enums.VideoStatus;
+import com.robspecs.streaming.repository.VideosRepository;
+import com.robspecs.videoprocessor.dto.VideoMetadata;
+import com.robspecs.videoprocessor.dto.VideoProcessingRequest;
+import com.robspecs.videoprocessor.exception.VideoProcessingException;
 
 @Service
 public class VideoProcessorService {

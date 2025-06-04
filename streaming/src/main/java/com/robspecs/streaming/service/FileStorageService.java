@@ -37,7 +37,7 @@ public interface FileStorageService {
      */
     boolean deleteFile(String relativeFilePath) throws IOException;
 
-    
+
     /**
      * Stores a file from an InputStream to the configured base path,
      * organizing it under a user-specific and type-specific subdirectory.

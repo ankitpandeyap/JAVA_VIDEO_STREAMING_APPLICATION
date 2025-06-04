@@ -58,3 +58,29 @@
     background-color: #c0392b; /* Slightly darker red on hover for accent */
     transform: translateY(-1px);
 }
+.upload-video-btn {
+    background-color: var(--highlight-color); /* Green accent for upload */
+    color: var(--text-color-dark-bg); /* Dark text on bright background */
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin-right: 15px; /* Space from other nav items */
+}
+
+.upload-video-btn:hover {
+    background-color: var(--secondary-color); /* Primary color on hover */
+    transform: translateY(-1px);
+}
+
+/* Ensure responsive behavior for the button in the header if the header itself is responsive */
+@media (max-width: 768px) {
+    .header-nav .upload-video-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        margin-right: 10px;
+    }
+}

@@ -1,5 +1,10 @@
 package com.robspecs.streaming.entities;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import com.robspecs.streaming.enums.VideoStatus;
+
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -16,10 +21,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.util.HashMap;
-import java.util.Map;
-import com.robspecs.streaming.entities.User;
-import com.robspecs.streaming.enums.VideoStatus;
 
 
 
@@ -51,7 +52,7 @@ public class Video {
     @Column(nullable = false)
     private Long fileSize; // Size in bytes
 
-   
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private VideoStatus status = VideoStatus.UPLOADED;
@@ -67,7 +68,7 @@ public class Video {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "upload_user_id", nullable = false)
     private User uploadUser;
-    
+
     @Column(nullable = false)
     private Long views = 0L;
 

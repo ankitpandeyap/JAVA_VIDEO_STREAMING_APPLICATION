@@ -39,7 +39,7 @@ public class FilesystemStorageServiceImpl implements FileStorageService {
 					ex);
 		}
 	}
-	
+
 	@Override
 	public String storeFile(InputStream inputStream, String fileName, Long userId, String typeSubdirectory)
 			throws IOException {

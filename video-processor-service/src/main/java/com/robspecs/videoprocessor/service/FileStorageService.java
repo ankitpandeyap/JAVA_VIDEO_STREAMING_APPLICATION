@@ -1,8 +1,14 @@
 // src/main/java/com/robspecs/videoprocessor/service/FileStorageService.java
 package com.robspecs.videoprocessor.service;
 
-import com.robspecs.streaming.exception.FileNotFoundException; // Reuse your custom exception
-import com.robspecs.streaming.exception.FileStorageException; // Reuse your custom exception
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,14 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.stream.Stream;
+import com.robspecs.streaming.exception.FileNotFoundException; // Reuse your custom exception
+import com.robspecs.streaming.exception.FileStorageException; // Reuse your custom exception
 
 @Service
 public class FileStorageService {
@@ -66,7 +66,7 @@ public class FileStorageService {
 
 	/**
 	 * Loads a file as a Resource from a relative path.
-	 * 
+	 *
 	 * @param relativeFilePath The relative path to the file from the base storage
 	 *                         location.
 	 * @return The Resource representing the file.
@@ -89,7 +89,7 @@ public class FileStorageService {
 	/**
 	 * Resolves a path to a file within the base storage location. Useful for
 	 * getting the absolute path to pass to external tools like FFmpeg.
-	 * 
+	 *
 	 * @param relativeFilePath The relative path to the file.
 	 * @return The absolute Path object.
 	 */
@@ -99,7 +99,7 @@ public class FileStorageService {
 
 	/**
 	 * Creates a directory relative to the base path.
-	 * 
+	 *
 	 * @param pathParts The parts of the path to create (e.g., "user123",
 	 *                  "processed", "hls")
 	 * @return The absolute Path object of the created directory.
@@ -119,7 +119,7 @@ public class FileStorageService {
 
 	/**
 	 * Deletes a directory and its contents.
-	 * 
+	 *
 	 * @param relativePath The relative path of the directory to delete.
 	 */
 	public void deleteDirectory(String relativePath) {
@@ -135,7 +135,7 @@ public class FileStorageService {
 
 	/**
 	 * Lists all files in a given directory relative to the base path.
-	 * 
+	 *
 	 * @param relativePath The relative path to the directory.
 	 * @return A stream of Path objects.
 	 */
@@ -180,7 +180,7 @@ public class FileStorageService {
             return false;
         }
         Path filePath = resolvePath(relativeFilePath); // Use resolvePath for validation and absolute path
-        
+
         if (!Files.exists(filePath)) {
             logger.info("File to delete does not exist: {}", filePath);
             return false;

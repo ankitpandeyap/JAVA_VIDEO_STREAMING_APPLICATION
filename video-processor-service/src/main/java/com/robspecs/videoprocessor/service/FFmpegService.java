@@ -1,9 +1,15 @@
 package com.robspecs.videoprocessor.service;
 
-import com.robspecs.videoprocessor.exception.VideoProcessingException;
-import com.robspecs.videoprocessor.dto.VideoMetadata;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import java.io.File;
+import java.io.IOException; // Added for Files.writeString
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList; // Added for List
+import java.util.Arrays; // Added for Arrays.asList
+import java.util.Comparator; // Added for sorting resolution profiles
+import java.util.LinkedHashMap; // Added for LinkedHashMap
+import java.util.List;
+import java.util.Map; // Added for Map
 
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.ffmpeg.global.avutil;
@@ -12,20 +18,13 @@ import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
 import org.bytedeco.javacv.FrameRecorder;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.IOException; // Added for Files.writeString
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList; // Added for List
-import java.util.Arrays; // Added for Arrays.asList
-import java.util.Comparator; // Added for sorting resolution profiles
-import java.util.List;
-import java.util.Map; // Added for Map
-import java.util.LinkedHashMap; // Added for LinkedHashMap
+import com.robspecs.videoprocessor.dto.VideoMetadata;
+import com.robspecs.videoprocessor.exception.VideoProcessingException;
 
 @Service
 public class FFmpegService {
@@ -182,7 +181,7 @@ public class FFmpegService {
             double originalFrameRate = grabber.getFrameRate();
             int originalSampleRate = grabber.getSampleRate();
             int originalAudioChannels = grabber.getAudioChannels();
-            
+
             // Validate original stream properties
             if (originalWidth <= 0 || originalHeight <= 0 || originalFrameRate <= 0 || originalSampleRate <= 0 || originalAudioChannels <= 0) {
                  logger.warn("Could not determine all original stream properties from {}. Proceeding with best-effort defaults or potential issues.", originalVideoPath);
@@ -204,7 +203,7 @@ public class FFmpegService {
                 try {
                     String outputFileName = profile.getName() + ".m3u8";
                     Path targetPlaylistPath = hlsOutputBaseDir.resolve(outputFileName);
-                    
+
                     logger.info("Starting HLS transcoding for video {} at resolution: {}", videoId, profile.getName());
 
                     recorder = new FFmpegFrameRecorder(targetPlaylistPath.toFile().getAbsolutePath(), profile.getWidth(), profile.getHeight());
@@ -236,7 +235,7 @@ public class FFmpegService {
                     // For very large videos, you might optimize this to use one grabber and
                     // multiple recorders or more advanced FFmpeg command line arguments.
                     grabber.restart(); // Restart grabber for a fresh read for this resolution
-                    
+
                     Frame frame;
                     long resolutionFrameCount = 0;
                     while ((frame = grabber.grab()) != null) {
@@ -284,7 +283,7 @@ public class FFmpegService {
                     }
                 }
             }
-            
+
             if (individualPlaylistPaths.isEmpty()) {
                 throw new VideoProcessingException("No HLS resolution playlists were successfully generated for video " + videoId);
             }

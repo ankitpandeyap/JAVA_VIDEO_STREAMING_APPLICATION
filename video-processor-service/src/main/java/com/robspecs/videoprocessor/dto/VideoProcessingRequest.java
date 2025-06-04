@@ -58,8 +58,8 @@ public class VideoProcessingRequest implements Serializable {
 	public void setUploadUserEmailOrUsername(String uploadUserEmailorUsername) {
 		this.uploadUserEmailorUsername = uploadUserEmailorUsername;
 	}
-	
-	
+
+
 
 	public Long getUploadUserId() {
 		return uploadUserId;
