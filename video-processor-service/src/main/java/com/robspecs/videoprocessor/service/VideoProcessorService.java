@@ -88,11 +88,29 @@ public class VideoProcessorService {
             // 2. Conditional Processing Logic based on file size
             Map<String, String> resolutionFilePaths = new HashMap<>();
 
-            // Corrected logic:
-            if (request.getFileSize() <= SMALL_VIDEO_SIZE_BYTES) {
-                // Video is small, no HLS transcoding needed. Copy original to processed.
-                logger.info("Video {} ({}MB) is small. Copying to processed folder.", video.getVideoId(),
-                        request.getFileSize() / (1024.0 * 1024.0));
+            // *** CRITICAL CHANGE HERE ***
+            if (request.getFileSize() > MEDIUM_VIDEO_SIZE_BYTES) { // Only HLS transcode if > 50 MB
+                logger.info("Video {} ({}MB) is large (> {}MB), initiating multi-resolution HLS transcoding.",
+                        video.getVideoId(),
+                        request.getFileSize() / (1024.0 * 1024.0),
+                        MEDIUM_VIDEO_SIZE_BYTES / (1024.0 * 1024.0));
+
+                String hlsMasterPlaylistRelativePath = ffmpegService.transcodeToHLS(
+                        originalVideoAbsolutePath,
+                        video.getVideoId(),
+                        request.getUploadUserId()
+                );
+
+                // Store only the master playlist path. The frontend player will use this single entry point.
+                resolutionFilePaths.put("hls_master", hlsMasterPlaylistRelativePath);
+
+                video.setStatus(VideoStatus.READY); // Assume success after HLS transcoding
+
+            } else { // This block handles SMALL (<=10MB) and MEDIUM (10MB to 50MB) videos
+                logger.info("Video {} ({}MB) is small or medium (<= {}MB). Copying to processed folder without HLS transcoding.",
+                        video.getVideoId(),
+                        request.getFileSize() / (1024.0 * 1024.0),
+                        MEDIUM_VIDEO_SIZE_BYTES / (1024.0 * 1024.0));
 
                 String fileName = originalVideoAbsolutePath.getFileName().toString();
                 Path targetProcessedFilePath = processedVideoDirectory.resolve(fileName);
@@ -104,25 +122,9 @@ public class VideoProcessorService {
                 // Store the relative path of the *copied* file in the database
                 resolutionFilePaths.put("original", fileStorageService.getRelativePath(targetProcessedFilePath));
                 video.setStatus(VideoStatus.READY);
-
-            } else { // This else block handles MEDIUM and LARGE videos, triggering HLS
-                logger.info("Video {} ({}MB) is medium or large, initiating multi-resolution HLS transcoding.", video.getVideoId(),
-                        request.getFileSize() / (1024.0 * 1024.0));
-
-                String hlsMasterPlaylistRelativePath = ffmpegService.transcodeToHLS(
-                        originalVideoAbsolutePath,
-                        video.getVideoId(),
-                        request.getUploadUserId()
-                );
-                
-                // Store only the master playlist path. The frontend player will use this single entry point.
-                resolutionFilePaths.put("hls_master", hlsMasterPlaylistRelativePath);
-                
-                // The 'hls_base' entry is no longer needed as the frontend player only needs the master playlist URL.
-                // It can resolve the base directory from the master playlist's URL if necessary.
-
-                video.setStatus(VideoStatus.READY); // Assume success after HLS transcoding
             }
+            // *** END OF CRITICAL CHANGE ***
+
 
             video.setResolutionFilePaths(resolutionFilePaths); // Update the map of paths in the video entity
             videoRepository.save(video); // Save final status, duration, and paths to DB
@@ -137,15 +139,11 @@ public class VideoProcessorService {
                     if (deleted) {
                         logger.info("Successfully deleted raw file: {}", originalRawFilePath);
                     } else {
-                        // This else block is now reached if the file didn't exist when deleteFile was called,
-                        // or if deleteFile had to return false for some other non-exception reason (less likely with my prev suggested change).
                         logger.warn("Raw file was not deleted, possibly due to it not existing or being in use before deletion. Path: {}", originalRawFilePath);
                     }
                 }
-            } catch (IOException e) { // Catch the IOException re-thrown by deleteFile
+            } catch (IOException e) {
                 logger.error("Failed to delete raw file for videoId {}. It might be in use or permissions are insufficient. Error: {}", video.getVideoId(), e.getMessage());
-                // Log the error but do not rethrow, as the video is already processed and ready.
-                // The raw file might persist, but the main goal (processed video) is achieved.
             }
             // --- END OF DELETION BLOCK ---
 
@@ -154,7 +152,6 @@ public class VideoProcessorService {
             video.setStatus(VideoStatus.FAILED);
             videoRepository.save(video); // Save FAILED status
             emailService.sendProcessingFailureEmail(uploadUserEmailOrUsername, originalVideoName, e.getMessage());
-            // Raw file is NOT deleted on failure
         } catch (Exception e) {
             logger.error("An unexpected error occurred during video processing for {}: {}", request.getVideoId(),
                     e.getMessage(), e);
@@ -162,7 +159,7 @@ public class VideoProcessorService {
             videoRepository.save(video); // Save FAILED status
             emailService.sendProcessingFailureEmail(uploadUserEmailOrUsername, originalVideoName,
                     "An unexpected error occurred: " + e.getMessage());
-            // Raw file is NOT deleted on failure
         }
     }
+
 }
