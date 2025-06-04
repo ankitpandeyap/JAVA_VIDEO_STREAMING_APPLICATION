@@ -11,6 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 import ProfilePage from "./pages/ProfilePage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import LoadingSpinner from "./components/LoadingSpinner";
 
 export default function App() {
   const location = useLocation();

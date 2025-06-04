@@ -96,3 +96,25 @@
     text-align: center;
     font-size: 0.9rem;
 }
+
+.video-thumbnail-placeholder {
+    width: 100%;
+    /* Maintain aspect ratio similar to the actual thumbnail */
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+    background-color: var(--bg-color-medium); /* A dark background for the placeholder */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-color-dark); /* Muted text color for the message */
+    font-size: 0.9rem;
+    text-align: center;
+    border-radius: var(--border-radius-sm); /* Match card's border-radius */
+    position: absolute; /* To correctly position it within .video-thumbnail-container */
+    top: 0;
+    left: 0;
+    height: 100%; /* Ensure it fills the container vertically */
+}
+
+.video-thumbnail-placeholder span {
+    max-width: 80%; /* Prevent text from overflowing */
+}
