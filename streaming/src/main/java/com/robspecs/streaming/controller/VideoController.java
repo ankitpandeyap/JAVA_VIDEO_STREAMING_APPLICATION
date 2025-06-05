@@ -162,6 +162,7 @@ public class VideoController {
 		try {
 			Video video = videoService.getActualVideoEntity(videoId, currentUser);
 
+			// This status check remains as is, checking for UPLOADED or PROCESSING
 			if (video.getStatus() == VideoStatus.UPLOADED || video.getStatus() == VideoStatus.PROCESSING) {
 				logger.warn("Video {} is not ready for streaming. Current status: {}", videoId, video.getStatus());
 				return ResponseEntity.status(HttpStatus.LOCKED).body(null);
@@ -169,7 +170,7 @@ public class VideoController {
 
 			String relativeFilePathToServe;
 			MediaType contentType;
-			long actualFileSize;
+			long actualFileSize; // This will still initially be video.getFileSize() (original size)
 
 			if (fileName != null && !fileName.isEmpty()) {
 				String hlsBasePath = video.getResolutionFilePaths().get("hls_base");
@@ -191,40 +192,60 @@ public class VideoController {
 				}
 
 				Path actualPath = fileStorageService.getFilePath(relativeFilePathToServe);
-				actualFileSize = Files.size(actualPath);
+				actualFileSize = Files.size(actualPath); // This actualFileSize is specific to the HLS segment/playlist
 				logger.debug("Serving specific file: {} (size: {}) for videoId: {}", relativeFilePathToServe,
 						actualFileSize, videoId);
 
 			} else {
-				actualFileSize = video.getFileSize();
-				logger.debug("Original video size: {} for videoId: {}", actualFileSize, videoId);
+				// **HIGHLIGHT START - THE ONLY MODIFIED LOGIC BLOCK**
+                // Original logic here was using video.getOriginalFilePath(),
+                // and my last suggestion used "processed_mp4" or "hls_master".
+                // Based on your latest info, the processed file is stored under the key "original".
 
-				if (actualFileSize < SMALL_VIDEO_THRESHOLD_BYTES) {
-					logger.info("Serving full video (small, {} bytes) for videoId: {}", actualFileSize, videoId);
-					relativeFilePathToServe = video.getOriginalFilePath();
-					contentType = MediaType.parseMediaType("video/mp4");
-					return ResponseEntity.ok()
-							.header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + video.getVideoName() + ".mp4\"")
-							.contentType(contentType).contentLength(actualFileSize)
-							.body(fileStorageService.loadFileAsResource(relativeFilePathToServe));
+                String primaryProcessedPath = video.getResolutionFilePaths().get("original"); // <-- CHANGED THIS LINE: Now looking for key "original"
+                String hlsMasterPlaylistPath = video.getResolutionFilePaths().get("hls_master"); // Keep this as a fallback for HLS
 
-				} else if (actualFileSize <= MEDIUM_VIDEO_THRESHOLD_BYTES) {
-					logger.info("Serving byte-range video (medium, {} bytes) for videoId: {}", actualFileSize, videoId);
-					relativeFilePathToServe = video.getOriginalFilePath();
-					contentType = MediaType.parseMediaType("video/mp4");
+                if (primaryProcessedPath != null) { // If "original" key holds the processed path
+                    relativeFilePathToServe = primaryProcessedPath;
+                    // Infer content type based on the file extension (assuming .mp4 if it's the main processed file)
+                    if (primaryProcessedPath.toLowerCase().endsWith(".mp4")) {
+                        contentType = MediaType.parseMediaType("video/mp4");
+                    } else if (primaryProcessedPath.toLowerCase().endsWith(".m3u8")) {
+                        contentType = MediaType.parseMediaType("application/x-mpegURL");
+                    } else {
+                        contentType = MediaType.APPLICATION_OCTET_STREAM; // Default if extension is unknown
+                    }
+                    logger.info("Serving primary processed video (from 'original' key) for videoId: {}", videoId);
+                } else if (hlsMasterPlaylistPath != null) {
+                    relativeFilePathToServe = hlsMasterPlaylistPath;
+                    contentType = MediaType.parseMediaType("application/x-mpegURL");
+                    logger.info("Serving HLS master playlist for videoId: {}", videoId);
+                } else {
+                    // Fallback if neither primaryProcessedPath nor hls_master is available
+                    logger.error("No streamable processed video path (original or hls_master) found for videoId: {}", videoId); // Log message updated
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                }
 
-				} else {
-					logger.info("Serving HLS stream (large, {} bytes) for videoId: {}", actualFileSize, videoId);
-					String hlsMasterPlaylistPath = video.getResolutionFilePaths().get("hls_master");
-					if (hlsMasterPlaylistPath == null) {
-						logger.error("HLS master playlist path not found for large videoId: {}", videoId);
-						return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-					}
-					relativeFilePathToServe = hlsMasterPlaylistPath;
-					contentType = MediaType.parseMediaType("application/x-mpegURL");
-				}
+                // After determining `relativeFilePathToServe` for the processed file,
+                // we need to get its actual size for the `Content-Length` headers.
+                Path finalProcessedPath = fileStorageService.getFilePath(relativeFilePathToServe);
+                actualFileSize = Files.size(finalProcessedPath); // <-- Now gets the size of the PROCESSED file
+                logger.debug("Determined processed video size: {} for videoId: {}", actualFileSize, videoId);
+
+                // The 'small' video specific return also needs to use the processed path and size
+                if (actualFileSize < SMALL_VIDEO_THRESHOLD_BYTES) {
+                    logger.info("Serving full processed video (small, {} bytes) for videoId: {}", actualFileSize, videoId);
+                    return ResponseEntity.ok()
+                            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + video.getVideoName() + ".mp4\"")
+                            .contentType(contentType).contentLength(actualFileSize)
+                            .body(fileStorageService.loadFileAsResource(relativeFilePathToServe));
+                }
+				// **HIGHLIGHT END**
 			}
 
+            // This part of the code remains unchanged.
+            // It will now correctly use `relativeFilePathToServe` (which points to the processed file)
+            // and `actualFileSize` (which is the size of the processed file).
 			Resource resource = fileStorageService.loadFileAsResource(relativeFilePathToServe);
 
 			List<HttpRange> ranges = headers.getRange();

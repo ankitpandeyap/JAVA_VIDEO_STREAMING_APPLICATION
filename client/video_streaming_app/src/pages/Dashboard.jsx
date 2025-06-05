@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
-import Footer from '../components/Footer';
+
 import VideoCard from '../components/VideoCard'; // Make sure this component exists
 import LoadingSpinner from '../components/LoadingSpinner'; // Make sure this component exists
 import axiosInstance from '../api/axiosInstance'; // Using your configured axios instance
@@ -56,7 +56,7 @@ const Dashboard = () => {
                         <div className="video-grid">
                             {videos.map(video => (
                                 // Ensure VideoCard can handle your video object structure (e.g., video.id, video.title, video.thumbnailUrl)
-                                <VideoCard key={video.id} video={video} />
+                                <VideoCard key={video.videoId} video={video} />
                             ))}
                         </div>
                     ) : (
@@ -65,7 +65,7 @@ const Dashboard = () => {
                     )}
                 </div>
             </div>
-            <Footer />
+         
         </div>
     );
 };

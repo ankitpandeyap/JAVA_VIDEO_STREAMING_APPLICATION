@@ -216,6 +216,7 @@ public class VideoServiceImpl implements VideoService {
 	}
 
 	@Override
+	@Transactional
 	public Video getActualVideoEntity(Long videoId, User user) {
 		logger.debug("Fetching actual video entity with ID: {} for user: {}", videoId, user.getUsername());
 		Video video = videoRepository.findById(videoId).orElseThrow(() -> {
