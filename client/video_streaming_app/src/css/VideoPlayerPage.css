@@ -1,5 +1,22 @@
-/* src/css/VideoPlayerPage.css - NEW FILE FOR DARK THEME */
+/* src/css/VideoPlayerPage.css */
 
+/* Root variables if not defined elsewhere */
+:root {
+    --bg-color-dark: #1a1a1a;
+    --bg-color-medium: #2a2a2a;
+    --bg-color-light: #3a3a3a;
+    --text-color-light: #f0f0f0;
+    --text-color-medium: #cccccc;
+    --text-color-dark: #999999;
+    --primary-color: #ff0000; /* YouTube red */
+    --secondary-color: #cc0000;
+    --accent-color: #ff3333;
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --transition: 0.3s ease-in-out;
+}
+
+/* Global layout for the page, including Header and Sidebar */
 .player-layout {
     display: flex;
     flex-direction: column;
@@ -15,41 +32,41 @@
 
 .player-content-area {
     flex-grow: 1;
-    padding: 1.5rem 2rem;
+    /* Removed fixed padding for now, will be handled by video-player-container margin */
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    padding: 1.5rem; /* Default padding for content area */
 }
 
+/* --- NEW/MODIFIED STYLES BELOW --- */
+
+/* Container for the video player and details, centering it on the screen */
 .video-player-container {
-    max-width: 1200px; /* Max width for the video player and details */
-    margin: 0 auto; /* Center the content */
+    max-width: 1280px; /* Max width similar to YouTube's player area */
+    width: 100%; /* Ensure it takes full width up to max-width */
+    margin: 0 auto; /* Centers the container horizontally */
     display: flex;
     flex-direction: column;
-    gap: 1.5rem; /* Space between sections */
+    gap: 1.5rem; /* Space between player and details */
 }
 
-/* Placeholder for the video player area */
-.video-player-placeholder {
-    width: 100%;
-    /* Aspect ratio for 16:9 videos */
-    padding-bottom: 56.25%; /* 9 / 16 = 0.5625 */
+/* Wrapper for ReactPlayer to maintain aspect ratio */
+.player-wrapper {
     position: relative;
-    background-color: var(--bg-color-light); /* Lighter dark background for player area */
+    padding-top: 56.25%; /* 16:9 aspect ratio (height / width = 9/16 = 0.5625) */
+    background-color: #000; /* Black background for player area */
     border-radius: var(--border-radius-md);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.2rem;
-    color: var(--text-color-dark);
-    text-align: center;
-    overflow: hidden; /* Important for future video tag */
+    overflow: hidden; /* Ensures video stays within rounded corners */
 }
 
-.video-player-placeholder p {
-    max-width: 80%; /* Limit text width inside placeholder */
-    margin: 0;
+/* Styles for ReactPlayer itself */
+.react-player {
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
+/* Video Details Section */
 .video-details {
     background-color: var(--bg-color-medium); /* Slightly lighter dark for details card */
     padding: 1.5rem;
@@ -65,14 +82,14 @@
     line-height: 1.2;
 }
 
-.video-player-channel {
+.video-player-channel { /* Renamed for consistency */
     font-size: 1.1rem;
     color: var(--primary-color); /* Highlight channel name */
     margin-bottom: 1rem;
     font-weight: 500;
 }
 
-.video-player-description {
+.video-player-description { /* Renamed for consistency */
     font-size: 0.95rem;
     color: var(--text-color-medium); /* Muted light text for description */
     line-height: 1.6;
@@ -80,55 +97,39 @@
     white-space: pre-wrap; /* Preserve formatting in description */
 }
 
-.video-player-views,
-.video-player-date {
+.video-player-views, /* Renamed for consistency */
+.video-player-date { /* If you add a date later */
     font-size: 0.85rem;
     color: var(--text-color-dark); /* Darker muted text for meta info */
     margin-bottom: 0.25rem;
 }
 
-.comments-section-placeholder {
-    background-color: var(--bg-color-medium);
-    padding: 1.5rem;
-    border-radius: var(--border-radius-md);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-    margin-top: 1.5rem; /* Space between video details and comments */
-}
-
-.comments-section-placeholder h3 {
-    font-size: 1.5rem;
-    color: var(--text-color-light);
-    margin-bottom: 1rem;
-}
-
-.video-player-error,
-.no-video-found-message {
+/* Error and Loading States */
+.video-error-container {
     text-align: center;
-    font-size: 1.2rem;
-    color: var(--accent-color); /* Error red */
     padding: 3rem;
     background-color: var(--bg-color-medium);
     border-radius: var(--border-radius-md);
     margin: 2rem auto;
     max-width: 600px;
+    color: var(--accent-color);
 }
 
-.video-player-error .back-button {
-    background-color: var(--primary-color);
-    color: var(--text-color-light);
-    padding: 10px 20px;
-    border: none;
-    border-radius: var(--border-radius-sm);
-    cursor: pointer;
-    margin-top: 1.5rem;
-    font-size: 1rem;
-    transition: background-color var(--transition);
+.video-error-message {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
 }
 
-.video-player-error .back-button:hover {
-    background-color: var(--secondary-color);
+.video-redirect-message {
+    font-size: 0.9rem;
+    color: var(--text-color-dark);
 }
 
+.placeholder-text {
+    text-align: center;
+    color: var(--text-color-medium);
+    padding: 2rem;
+}
 
 /* Responsive adjustments */
 @media (max-width: 1024px) {
@@ -147,14 +148,17 @@
     .player-main-content {
         flex-direction: column; /* Stack sidebar and content vertically */
     }
+    .player-content-area {
+        padding: 1rem; /* Added padding for smaller screens */
+    }
     .video-player-container {
-        padding: 0 1rem; /* Adjust padding for smaller screens */
+        max-width: 100%; /* Allow container to take full width */
+        padding: 0 1rem; /* Add horizontal padding inside the container */
     }
     .video-player-title {
         font-size: 1.5rem;
     }
-    .video-details,
-    .comments-section-placeholder {
+    .video-details {
         padding: 1rem;
     }
 }
@@ -175,9 +179,4 @@
     .video-player-description {
         font-size: 0.85rem;
     }
-}
-.react-player {
-    position: absolute; /* ReactPlayer itself will be absolutely positioned */
-    top: 0;
-    left: 0;
 }

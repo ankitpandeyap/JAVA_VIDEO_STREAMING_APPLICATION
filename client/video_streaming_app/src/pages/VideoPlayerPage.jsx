@@ -1,5 +1,3 @@
-// src/components/VideoPlayerPage.jsx
-
 import React, {
   useEffect,
   useState,
@@ -15,7 +13,7 @@ import { AuthContext } from "../context/AuthContext";
 import LoadingSpinner from "../components/LoadingSpinner";
 import axiosInstance from "../api/axiosInstance";
 import { toast } from "react-toastify";
-import "../css/VideoPlayerPage.css";
+import "../css/VideoPlayerPage.css"; // Ensure this import is correct
 
 const VideoPlayerPage = () => {
   const { videoId } = useParams();
@@ -99,11 +97,11 @@ const VideoPlayerPage = () => {
     : {};
 
   return (
-    <div className="video-player-page-layout">
+    <div className="player-layout"> {/* Renamed class */}
       <Header />
-      <div className="video-player-main-content">
+      <div className="player-main-content"> {/* Renamed class */}
         <Sidebar />
-        <div className="video-content-area">
+        <div className="player-content-area"> {/* Renamed class */}
           {loading ? (
             <LoadingSpinner />
           ) : error ? (
@@ -114,7 +112,8 @@ const VideoPlayerPage = () => {
               </p>
             </div>
           ) : video ? (
-            <>
+            // --- NEW WRAPPER HERE ---
+            <div className="video-player-container">
               <div className="player-wrapper">
                 {videoPlaybackUrl ? (
                   <ReactPlayer
@@ -130,12 +129,7 @@ const VideoPlayerPage = () => {
                         attributes: {
                           crossOrigin: "use-credentials",
                         },
-                        // <--- NEW / MODIFIED PART START --->
-                        // This sends headers for direct file playback (MP4, etc.)
                         httpHeaders: streamHeaders,
-
-                        // hlsOptions.xhrSetup is STILL needed for HLS (large videos)
-                        // It's good to keep it for when your backend *does* serve HLS.
                         hlsOptions: {
                           xhrSetup: (xhr, url) => {
                             console.log(`[HLS.js xhrSetup] Intercepting request for: ${url}`);
@@ -158,9 +152,8 @@ const VideoPlayerPage = () => {
                               );
                             }
                           },
-                          debug: true, // Keep this for HLS.js specific debugging
+                          debug: true,
                         },
-                        // <--- NEW / MODIFIED PART END --->
                       },
                     }}
                   />
@@ -174,14 +167,15 @@ const VideoPlayerPage = () => {
                 )}
               </div>
               <div className="video-details">
-                <h1 className="video-title">{video.videoName}</h1>
-                <p className="video-views">{video.views} views</p>
-                <p className="video-description">{video.description}</p>
-                <p className="video-uploader">
+                <h1 className="video-player-title">{video.videoName}</h1> {/* Changed class name */}
+                <p className="video-player-views">{video.views} views</p> {/* Changed class name */}
+                <p className="video-player-description">{video.description}</p> {/* Changed class name */}
+                <p className="video-player-channel"> {/* Changed class name */}
                   Uploaded by: {video.uploadUsername}
                 </p>
               </div>
-            </>
+            </div>
+            // --- END NEW WRAPPER ---
           ) : (
             <p className="placeholder-text">No video data available.</p>
           )}

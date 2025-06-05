@@ -15,3 +15,13 @@ services:
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - ALLOW_PLAINTEXT_LISTENER=yes
+    volumes:
+      - kafka_data:/bitnami/kafka
+    command: >
+      bash -c "
+        trap 'echo Cleaning up...; rm -rf /bitnami/kafka/data/* /bitnami/kafka/logs/*' SIGTERM;
+        /opt/bitnami/scripts/kafka/run.sh
+      "
+
+volumes:
+  kafka_data:
