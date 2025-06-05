@@ -7,7 +7,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Comparator;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -123,4 +125,29 @@ public class FilesystemStorageServiceImpl implements FileStorageService {
 		}
 		return false;
 	}
+	
+	
+	
+	 @Override
+	    public boolean deleteDirectory(String relativeDirectoryPath) throws IOException { // <--- NEW METHOD IMPLEMENTATION
+	        if (!StringUtils.hasText(relativeDirectoryPath)) {
+	            return false;
+	        }
+	        Path directoryPath = getFilePath(relativeDirectoryPath); // Use getFilePath for path validation and normalization
+	        if (Files.exists(directoryPath) && Files.isDirectory(directoryPath)) {
+	            try (Stream<Path> walk = Files.walk(directoryPath)) {
+	                walk.sorted(Comparator.reverseOrder()) // Ensures files are deleted before their parent directories
+	                    .forEach(path -> {
+	                        try {
+	                            Files.delete(path);
+	                        } catch (IOException e) {
+	                            // Log the error but don't re-throw to allow deletion of other files/subdirectories to proceed
+	                            System.err.println("Failed to delete " + path + ": " + e.getMessage()); // Consider using a logger here instead of System.err
+	                        }
+	                    });
+	            }
+	            return true;
+	        }
+	        return false; // Directory did not exist or was not a directory
+	    }
 }

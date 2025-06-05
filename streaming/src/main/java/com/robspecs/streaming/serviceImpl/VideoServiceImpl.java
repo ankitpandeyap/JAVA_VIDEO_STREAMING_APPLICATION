@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.robspecs.streaming.dto.VideoDetailsDTO;
 import com.robspecs.streaming.dto.VideoProcessingRequest;
+import com.robspecs.streaming.dto.VideoUpdateRequest;
 import com.robspecs.streaming.dto.VideoUploadDTO;
 import com.robspecs.streaming.entities.User;
 import com.robspecs.streaming.entities.Video;
@@ -231,4 +232,72 @@ public class VideoServiceImpl implements VideoService {
 		}
 		return video;
 	}
+	
+	@Override
+    @Transactional
+    public List<VideoDetailsDTO> getVideosByCurrentUser(User user) {
+        logger.debug("Fetching all videos for user: {}", user.getUsername());
+        List<Video> videos = videoRepository.findAllByUploadUser(user);
+        logger.info("Found {} videos for user: {}", videos.size(), user.getUsername());
+        return videos.stream()
+                .map(this::convertToVideoDetailsDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public VideoDetailsDTO updateVideo(Long videoId, VideoUpdateRequest updateRequest, User currentUser) { // <--- Uses VideoUpdateRequest
+        logger.info("Attempting to update video ID: {} by user: {}", videoId, currentUser.getUsername());
+
+        Video video = videoRepository.findByVideoIdAndUploadUser(videoId, currentUser)
+                .orElseThrow(() -> {
+                    logger.warn("Video with ID: {} not found for user: {} or access denied.", videoId, currentUser.getUsername());
+                    return new FileNotFoundException("Video not found or you do not have permission to update.");
+                });
+
+        if (updateRequest.getTitle() != null && !updateRequest.getTitle().trim().isEmpty()) {
+            video.setVideoName(updateRequest.getTitle());
+            logger.debug("Updated videoName to: {}", updateRequest.getTitle());
+        }
+        if (updateRequest.getDescription() != null) {
+            video.setDescription(updateRequest.getDescription());
+            logger.debug("Updated description to: {}", updateRequest.getDescription());
+        }
+
+        Video updatedVideo = videoRepository.save(video);
+        logger.info("Video ID: {} updated successfully by user: {}", videoId, currentUser.getUsername());
+        return convertToVideoDetailsDTO(updatedVideo);
+    }
+
+    @Override
+    @Transactional
+    public void deleteVideo(Long videoId, User currentUser) {
+        logger.info("Attempting to delete video ID: {} by user: {}", videoId, currentUser.getUsername());
+
+        Video video = videoRepository.findByVideoIdAndUploadUser(videoId, currentUser)
+                .orElseThrow(() -> {
+                    logger.warn("Video with ID: {} not found for user: {} or access denied for deletion.", videoId, currentUser.getUsername());
+                    return new FileNotFoundException("Video not found or you do not have permission to delete.");
+                });
+
+        try {
+            if (video.getOriginalFilePath() != null && !video.getOriginalFilePath().isEmpty()) {
+                fileStorageService.deleteFile(video.getOriginalFilePath());
+                logger.info("Deleted original file: {} for video ID: {}", video.getOriginalFilePath(), videoId);
+            }
+
+            String processedVideoDirectoryPath = String.format("%s/videos/processed/%d/hls",
+                                                                currentUser.getUserId(),
+                                                                videoId);
+            fileStorageService.deleteDirectory(processedVideoDirectoryPath);
+            logger.info("Deleted processed video directory: {} for video ID: {}", processedVideoDirectoryPath, videoId);
+
+        } catch (IOException e) {
+            logger.error("Failed to delete video files from storage for video ID {}: {}", videoId, e.getMessage(), e);
+            throw new RuntimeException("Failed to delete video files from storage.", e);
+        }
+
+        videoRepository.delete(video);
+        logger.info("Video entity with ID: {} deleted successfully from DB.", videoId);
+    }
 }

@@ -50,4 +50,14 @@ public interface FileStorageService {
      * @throws IOException If an I/O error occurs during storage.
      */
 	String storeFile(InputStream inputStream, String fileName, Long userId, String typeSubdirectory) throws IOException;
+	
+	
+	
+	/**
+     * Deletes a directory and all its contents recursively.
+     * @param relativeDirectoryPath The relative path of the directory to delete.
+     * @return true if the directory was deleted successfully or did not exist, false otherwise.
+     * @throws IOException if an I/O error occurs during deletion.
+     */
+      boolean deleteDirectory(String relativeDirectoryPath) throws IOException;
 }

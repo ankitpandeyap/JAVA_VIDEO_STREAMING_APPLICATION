@@ -1,16 +1,17 @@
-// src/pages/ProfilePage.jsx (or src/components/ProfilePage.jsx)
+// src/pages/ProfilePage.jsx
 
 import React, { useEffect, useState, useContext } from 'react';
 import { toast } from 'react-toastify';
-import axiosInstance from '../api/axiosInstance'; // Assuming this is where your axios setup is
-import { AuthContext } from '../context/AuthContext'; // Assuming you have an AuthContext for accessToken
+import axiosInstance from '../api/axiosInstance';
+import { AuthContext } from '../context/AuthContext';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
-import '../css/ProfilePage.css'; // We'll create this CSS file next
+import LoadingSpinner from '../components/LoadingSpinner'; // Assuming you have a reusable spinner
+import '../css/ProfilePage.css'; // We'll create this CSS file
 import { useNavigate } from 'react-router-dom';
 
 export default function ProfilePage() {
-    const { accessToken, loadingAuth } = useContext(AuthContext);
+    const { isAuthenticated, loadingAuth } = useContext(AuthContext); // Use isAuthenticated for clarity
     const navigate = useNavigate();
 
     const [userProfile, setUserProfile] = useState(null);
@@ -18,43 +19,66 @@ export default function ProfilePage() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        // Redirect to login if not authenticated or auth is still loading
-        if (!loadingAuth && !accessToken) {
-            toast.error("You need to be logged in to view your profile.");
-            navigate('/login');
-            return;
-        }
+        // Only proceed if authentication status is known and user is authenticated
+        if (!loadingAuth) {
+            if (!isAuthenticated) {
+                toast.error("You need to be logged in to view your profile.");
+                navigate('/login');
+                return;
+            }
 
-        const fetchUserProfile = async () => {
-            try {
+            const fetchUserProfile = async () => {
                 setLoading(true);
                 setError(null); // Clear previous errors
+                try {
+                    // Make sure the path matches your backend: /api/users/me
+                    const response = await axiosInstance.get('/users/me');
+                    setUserProfile(response.data);
+                    toast.success("User profile loaded successfully!");
+                } catch (err) {
+                    console.error("Failed to fetch user profile:", err);
+                    setError("Failed to load profile. Please try again.");
 
-                const response = await axiosInstance.get('users/me');
-                setUserProfile(response.data);
-                toast.success("User profile loaded successfully!");
-            } catch (err) {
-                console.error("Failed to fetch user profile:", err);
-                setError("Failed to load profile. Please try again.");
-                toast.error("Failed to load profile: " + (err.response?.data?.message || err.message));
+                    // Improved error message extraction
+                    const errorMessage = err.response?.data?.message || err.response?.data?.error || "An unexpected error occurred.";
+                    toast.error(`Failed to load profile: ${errorMessage}`);
 
-                // If it's a 401 and not handled by interceptor, or interceptor fails
-                if (err.response && err.response.status === 401) {
-                    // The interceptor should handle 401 and redirect,
-                    // but as a fallback/redundancy, we can ensure redirection here.
-                    // However, relying primarily on the interceptor is best.
-                    // navigate('/login'); // Uncomment if interceptor issues are persistent
+                    // The axios interceptor in axiosInstance should handle 401 redirection,
+                    // so explicit navigate('/login') here might be redundant but can serve as a fallback.
+                    // If your interceptor is robust, you can remove this.
+                    if (err.response && err.response.status === 401) {
+                         navigate('/login');
+                    }
+                } finally {
+                    setLoading(false);
                 }
-            } finally {
-                setLoading(false);
-            }
-        };
+            };
 
-        if (accessToken) { // Only fetch if accessToken is available
             fetchUserProfile();
         }
-    }, [accessToken, loadingAuth, navigate]); // Depend on accessToken and loadingAuth
+    }, [isAuthenticated, loadingAuth, navigate]); // Dependencies for useEffect
 
+    // Function to format LocalDateTime from backend (e.g., "2024-06-05T10:30:00")
+    const formatDateTime = (isoString) => {
+        if (!isoString) return 'N/A';
+        try {
+            const date = new Date(isoString);
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+        } catch (e) {
+            console.error("Error formatting date:", e);
+            return isoString; // Return original if formatting fails
+        }
+    };
+
+    // Conditional rendering based on loading, error, and data presence
     if (loading) {
         return (
             <>
@@ -62,7 +86,7 @@ export default function ProfilePage() {
                 <div className="main-layout">
                     <Sidebar />
                     <div className="profile-content-area loading-profile">
-                        <p>Loading profile...</p>
+                        <LoadingSpinner message="Loading profile..." />
                     </div>
                 </div>
             </>
@@ -83,6 +107,8 @@ export default function ProfilePage() {
         );
     }
 
+    // This case should ideally be caught by loading or error,
+    // but as a final safeguard if userProfile is unexpectedly null
     if (!userProfile) {
         return (
             <>
@@ -90,32 +116,14 @@ export default function ProfilePage() {
                 <div className="main-layout">
                     <Sidebar />
                     <div className="profile-content-area no-profile-data">
-                        <p>No user profile data found.</p>
+                        <p>No user profile data found. Please try logging in again.</p>
+                        {/* Optionally add a retry button or direct to login */}
+                        <button onClick={() => navigate('/login')} className="btn-primary">Go to Login</button>
                     </div>
                 </div>
             </>
         );
     }
-
-    // Function to format LocalDateTime
-    const formatDateTime = (isoString) => {
-        if (!isoString) return 'N/A';
-        try {
-            const date = new Date(isoString);
-            return date.toLocaleString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true
-            });
-        } catch (e) {
-            console.error("Error formatting date:", e);
-            return isoString; // Return original if formatting fails
-        }
-    };
 
     return (
         <>
@@ -123,15 +131,25 @@ export default function ProfilePage() {
             <div className="main-layout">
                 <Sidebar />
                 <div className="profile-content-area">
-                  
+                    <div className="profile-header">
+                        <h2>Your Profile</h2>
+                    </div>
                     <div className="profile-details">
                         <div className="profile-item">
                             <span className="profile-label">Username:</span>
-                            <span className="profile-value">{userProfile.username}</span>
+                            <span className="profile-value">{userProfile.userName}</span> {/* Matches backend UserProfileDTO */}
+                        </div>
+                        <div className="profile-item">
+                            <span className="profile-label">Full Name:</span>
+                            <span className="profile-value">{userProfile.name}</span> {/* Matches backend UserProfileDTO */}
                         </div>
                         <div className="profile-item">
                             <span className="profile-label">Email:</span>
                             <span className="profile-value">{userProfile.email}</span>
+                        </div>
+                        <div className="profile-item">
+                            <span className="profile-label">Role:</span>
+                            <span className="profile-value">{userProfile.role}</span>
                         </div>
                         <div className="profile-item">
                             <span className="profile-label">Member Since:</span>
@@ -139,8 +157,11 @@ export default function ProfilePage() {
                         </div>
                         {/* Add more profile fields here as needed from UserProfileDTO */}
                     </div>
-                    {/* Optional: Add a button to edit profile or change password */}
-                    {/* <button className="edit-profile-btn">Edit Profile</button> */}
+                    {/* Optional: Add buttons for actions like "Edit Profile" or "Change Password" */}
+                    <div className="profile-actions">
+                        {/* <button className="btn-secondary">Edit Profile</button> */}
+                        {/* <button className="btn-secondary">Change Password</button> */}
+                    </div>
                 </div>
             </div>
         </>

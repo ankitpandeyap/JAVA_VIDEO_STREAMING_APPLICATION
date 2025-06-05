@@ -1,199 +1,123 @@
-// src/pages/VideoPlayerPage.jsx - MODIFIED FOR REACT-PLAYER
+// src/pages/VideoPlayerPage.jsx - COMPLETE CODE FOR VIDEO PLAYBACK, DETAILS, AND ERROR HANDLING
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
-import ReactPlayer from 'react-player/lazy'; // Import ReactPlayer (using lazy load for smaller bundle)
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate for redirection
+import ReactPlayer from 'react-player'; // Your video player component
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
-import LoadingSpinner from '../components/LoadingSpinner';
-import '../css/VideoPlayerPage.css';
-
-// Dummy API URL for fetching a single video's details.
-const VIDEO_DETAIL_API_URL = 'http://localhost:5000/api/videos'; // **IMPORTANT: Replace with your actual backend URL**
-// Dummy API URL for streaming the video. This will likely be different from detail API.
-// For HLS, this would point to the .m3u8 master playlist.
-// For direct MP4, this would be the direct video file URL.
-const VIDEO_STREAM_BASE_URL = 'http://localhost:5000/api/stream/video'; // **IMPORTANT: Replace with your actual stream base URL**
-
+import LoadingSpinner from '../components/LoadingSpinner'; // Assuming you have a LoadingSpinner component
+import axiosInstance from '../api/axiosInstance'; // Your configured axios instance for API calls
+import { toast } from 'react-toastify'; // For user feedback
+import '../css/VideoPlayerPage.css'; // Your existing CSS for the video player page
 
 const VideoPlayerPage = () => {
-    const { videoId } = useParams();
-    const playerRef = useRef(null); // Reference to the ReactPlayer instance
+    const { videoId } = useParams(); // Extract videoId from the URL parameters
+    const navigate = useNavigate(); // Hook to programmatically navigate users
+    const [video, setVideo] = useState(null); // State to store video details
+    const [loading, setLoading] = useState(true); // State to manage loading status
+    const [error, setError] = useState(''); // State to store error messages
 
-    const [video, setVideo] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [playbackError, setPlaybackError] = useState('');
-    const [buffering, setBuffering] = useState(false); // State for buffering indicator
+    // Function to fetch video details from the backend
+    const fetchVideoDetails = async () => {
+        setLoading(true); // Start loading state
+        setError('');     // Clear any previous errors
+        try {
+            // Make an API call using axiosInstance to get video details by ID
+            // Assumes backend endpoint: GET /api/videos/{videoId}
+            const response = await axiosInstance.get(`/videos/${videoId}`);
+            setVideo(response.data); // Update video state with fetched data
+            toast.success('Video loaded successfully!'); // Show success toast
 
-    // We'll remove the hls.js specific logic as ReactPlayer handles it internally
-    // and instead focus on getting the correct URL to pass to ReactPlayer
+            // After successfully fetching video details, initiate view increment
+            incrementVideoViews(videoId);
 
-    useEffect(() => {
-        const fetchVideoDetails = async () => {
-            try {
-                setLoading(true);
-                setError('');
-                setPlaybackError(''); // Clear playback errors on new fetch
+        } catch (err) {
+            console.error('Failed to fetch video details:', err);
+            // Determine a user-friendly error message
+            const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Failed to load video details. It might not exist or be unavailable.';
+            setError(errorMessage); // Set error state
+            toast.error(errorMessage); // Show error toast
 
-                const response = await axios.get(`${VIDEO_DETAIL_API_URL}/${videoId}`);
-
-                const fetchedVideo = response.data.video || response.data;
-
-                if (fetchedVideo && fetchedVideo.status === 'ready') {
-                    setVideo(fetchedVideo);
-                    // --- IMPORTANT: Determine the actual stream URL from fetchedVideo data ---
-                    // This is where your backend data will dictate what URL to play.
-                    // ReactPlayer can often infer the type (MP4 vs HLS) from the URL extension.
-
-                    let streamUrl = '';
-
-                    // Placeholder logic: Adapt this based on your backend's response structure
-                    // Your backend should ideally provide a direct playable URL (MP4, HLS .m3u8)
-                    if (fetchedVideo.hlsMasterPlaylistUrl) {
-                        streamUrl = fetchedVideo.hlsMasterPlaylistUrl;
-                    } else if (fetchedVideo.directMp4Url) {
-                        streamUrl = fetchedVideo.directMp4Url;
-                    } else {
-                        // Fallback/example for initial setup if backend provides just ID and fileSize
-                        // This logic needs to align with your actual backend's streaming endpoint.
-                        if (fetchedVideo.fileSize && fetchedVideo.fileSize > 50 * 1024 * 1024) { // >50MB
-                           streamUrl = `${VIDEO_STREAM_BASE_URL}/${videoId}/master.m3u8`; // Assuming this path provides HLS
-                        } else if (fetchedVideo.fileSize) { // <50MB (direct stream for now, backend handles byte range)
-                           streamUrl = `${VIDEO_STREAM_BASE_URL}/${videoId}/default.mp4`; // Assuming this path provides direct MP4
-                        } else {
-                            // If no file size or specific URLs, provide a generic placeholder
-                            streamUrl = `${VIDEO_STREAM_BASE_URL}/${videoId}/stream`; // Generic stream URL
-                        }
-                    }
-
-                    if (streamUrl) {
-                        setVideo(prevVideo => ({ ...prevVideo, streamUrl })); // Add streamUrl to video state
-                    } else {
-                        setPlaybackError('No valid stream URL provided by backend.');
-                    }
-
-                } else if (fetchedVideo && fetchedVideo.status !== 'ready') {
-                    setError('Video is still processing or not ready for streaming.');
-                    setVideo(null);
-                } else {
-                    setError('Video not found or invalid data.');
-                    setVideo(null);
-                }
-            } catch (err) {
-                console.error('Error fetching video details:', err);
-                if (err.response && err.response.status === 404) {
-                    setError('Video not found.');
-                } else if (err.response) {
-                    setError(err.response.data.message || 'Server error fetching video details.');
-                } else if (err.request) {
-                    setError('No response from server. Check your network connection.');
-                } else {
-                    setError('An unexpected error occurred.');
-                }
-                setVideo(null);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (videoId) {
-            fetchVideoDetails();
-        } else {
-            setLoading(false);
-            setError('No video ID provided.');
+            // Redirect to the dashboard after a short delay so the user can read the message
+            setTimeout(() => {
+                navigate('/dashboard');
+            }, 3000); // Redirect after 3 seconds
+        } finally {
+            setLoading(false); // End loading state
         }
-
-        // No cleanup needed for hls.js instance as ReactPlayer manages it
-    }, [videoId]); // Re-fetch if videoId changes
-
-    const handlePlayerError = (e) => {
-        console.error('ReactPlayer error:', e);
-        // ReactPlayer's onError might give different types of errors (event, code, etc.)
-        // You might need to inspect 'e' to get a more specific message.
-        setPlaybackError('Could not play video. This might be due to an unsupported format or network issue.');
-        setBuffering(false); // Stop buffering on error
     };
 
+    // Function to increment video views (fire and forget, less critical error handling)
+    const incrementVideoViews = async (id) => {
+        try {
+            // Make an API call using axiosInstance to increment views
+            // Assumes backend endpoint: POST /api/videos/increment-views/{videoId}
+            await axiosInstance.post(`/videos/increment-views/${id}`);
+            console.log(`Views incremented for video ${id}`);
+        } catch (err) {
+            console.warn(`Failed to increment views for video ${id}:`, err);
+            // Use a warning toast for non-critical errors like view count not updating
+            toast.warn('Could not update view count.');
+        }
+    };
+
+    // Handler for ReactPlayer errors (e.g., video file not found, network issues during playback)
+    const handlePlayerError = (err) => {
+        console.error('ReactPlayer error:', err);
+        toast.error('Video playback error. Please try again.');
+        // You could add more sophisticated UI here, like an overlay over the player.
+    };
+
+    // useEffect hook to fetch video details when the component mounts or videoId changes
+    useEffect(() => {
+        if (videoId) { // Ensure videoId is available from URL
+            fetchVideoDetails();
+        }
+    }, [videoId]); // Dependency array: re-run if videoId changes (e.g., navigating between videos)
+
     return (
-        <div className="player-layout">
+        <div className="video-player-page-layout">
             <Header />
-            <div className="player-main-content">
+            <div className="video-player-main-content">
                 <Sidebar />
-                <div className="player-content-area">
+                <div className="video-content-area">
                     {loading ? (
-                        <LoadingSpinner message="Loading video..." />
+                        // Show loading spinner while fetching video details
+                        <LoadingSpinner />
                     ) : error ? (
-                        <div className="video-player-error">
-                            <p>{error}</p>
-                            <button onClick={() => window.history.back()} className="back-button">Go Back</button>
+                        // Show error message if fetching failed, with a redirect message
+                        <div className="video-error-container">
+                            <p className="video-error-message">{error}</p>
+                            <p className="video-redirect-message">Redirecting to Dashboard...</p>
                         </div>
-                    ) : video && video.streamUrl ? ( // Ensure streamUrl is present
-                        <div className="video-player-container">
-                            <div className="video-player-wrapper">
+                    ) : video ? (
+                        // If video details are successfully loaded, display the player and details
+                        <>
+                            <div className="player-wrapper">
                                 <ReactPlayer
-                                    ref={playerRef}
-                                    className="react-player" // For styling the player itself
-                                    url={video.streamUrl} // The URL to stream from your backend
+                                    url={video.videoUrl} // The URL for the video stream
+                                    className='react-player'
                                     playing={true} // Autoplay
-                                    controls={true} // Use ReactPlayer's built-in controls for now
-                                    width="100%"
-                                    height="100%"
-                                    onBuffer={() => setBuffering(true)} // When buffering starts
-                                    onBufferEnd={() => setBuffering(false)} // When buffering ends
-                                    onReady={() => {
-                                        setBuffering(false); // Ensure buffering is off when ready
-                                        setPlaybackError(''); // Clear any errors on ready
-                                    }}
-                                    onError={handlePlayerError} // Handle player errors
-                                    config={{
-                                        file: {
-                                            attributes: {
-                                                preload: 'auto', // Preload video metadata
-                                            },
-                                            // You can explicitly tell ReactPlayer to use HLS.js
-                                            // for .m3u8 files if not autodetected, though it usually is.
-                                            hlsOptions: {
-                                                // autoStartLoad: true,
-                                                // debug: false,
-                                                // etc.
-                                            }
-                                        }
-                                    }}
+                                    controls={true} // Show default player controls
+                                    width='100%'
+                                    height='100%'
+                                    onError={handlePlayerError} // Handle playback errors
+                                    // Optional: Add a light prop with video.thumbnailUrl for a custom preview image
+                                    // light={video.thumbnailUrl}
                                 />
-
-                                {buffering && (
-                                    <div className="video-overlay loading-overlay">
-                                        <LoadingSpinner small={true} />
-                                        <p>Buffering...</p>
-                                    </div>
-                                )}
-                                {playbackError && (
-                                    <div className="video-overlay playback-error-overlay">
-                                        <p className="playback-error-message">Playback Error: {playbackError}</p>
-                                        <button onClick={() => playerRef.current && playerRef.current.load()} className="retry-playback-button">Retry</button>
-                                        {/* You might want to reload the entire page or re-fetch details */}
-                                    </div>
-                                )}
-                                {/* Future: Custom controls overlay goes here if not using built-in controls */}
                             </div>
-
                             <div className="video-details">
-                                <h1 className="video-player-title">{video.title}</h1>
-                                <p className="video-player-channel">By: {video.channelName || 'Unknown Channel'}</p>
-                                <p className="video-player-description">{video.description}</p>
-                                {video.views !== undefined && <p className="video-player-views">{video.views} views</p>}
-                                {video.uploadDate && <p className="video-player-date">Uploaded on: {new Date(video.uploadDate).toLocaleDateString()}</p>}
+                                <h1 className="video-title">{video.title}</h1>
+                                {/* Display current view count */}
+                                <p className="video-views">{video.views} views</p> 
+                                <p className="video-description">{video.description}</p>
+                                {/* Future Enhancements: Comments section, Like/Dislike buttons, Quality selection UI */}
                             </div>
-
-                            <div className="comments-section-placeholder">
-                                <h3>Comments (Coming Soon)</h3>
-                            </div>
-                        </div>
-                    ) : ( // Case where video is null or streamUrl is missing
-                        <p className="no-video-found-message">{!loading && !error ? 'No video stream available.' : ''}</p>
+                        </>
+                    ) : (
+                        // Fallback if video is null and no specific error was caught (shouldn't typically happen)
+                        <p className="placeholder-text">Video not found.</p>
                     )}
                 </div>
             </div>
