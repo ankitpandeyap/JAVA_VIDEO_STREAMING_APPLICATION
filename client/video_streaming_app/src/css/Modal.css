@@ -1,0 +1,210 @@
+/* src/css/Modal.css */
+
+/* The backdrop that covers the entire screen, dimming the background */
+.modal-backdrop {
+    position: fixed; /* Stays in place even if the user scrolls */
+    top: 0;
+    left: 0;
+    width: 100vw; /* Full viewport width */
+    height: 100vh; /* Full viewport height */
+    background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black overlay */
+    display: flex; /* Use flexbox to center the modal content */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    z-index: 1000; /* Ensure it appears on top of other content */
+    backdrop-filter: blur(5px); /* Optional: Adds a blur effect to content behind */
+    transition: opacity var(--transition); /* Smooth fade-in/out */
+    opacity: 1; /* Default opacity */
+}
+
+/* The actual container for the modal's content */
+.modal-content-container {
+    background-color: var(--bg-color-medium); /* Using your --bg-color-medium */
+    color: var(--text-color-light); /* Using your --text-color-light */
+    padding: 30px;
+    border-radius: var(--border-radius-md); /* Using your border-radius-md */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5); /* Stronger shadow for depth */
+    position: relative;
+    max-width: 500px; /* Maximum width for the modal */
+    width: 90%; /* Take 90% of available width, good for responsiveness */
+    max-height: 80vh; /* Maximum height, enabling scroll if content is long */
+    overflow-y: auto; /* Enable vertical scrolling if content exceeds max-height */
+    animation: fadeInScale var(--transition) forwards; /* Animation for modal entry */
+    border: 1px solid var(--border-color-light); /* Subtle border matching your theme */
+}
+
+/* Header section of the modal */
+.modal-header {
+    display: flex;
+    justify-content: space-between; /* Puts title on left, close button on right */
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color-light); /* Separator line */
+}
+
+/* Title inside the modal header */
+.modal-title {
+    font-size: 1.8em;
+    color: var(--primary-color); /* Using your --primary-color for title */
+    margin: 0; /* Remove default margin */
+}
+
+/* Close button (the 'x') */
+.modal-close-button {
+    background: none; /* No background */
+    border: none; /* No border */
+    font-size: 2em;
+    color: var(--text-color-dark); /* Using your --text-color-dark for the 'x' */
+    cursor: pointer; /* Indicates it's clickable */
+    transition: color var(--transition); /* Smooth color change on hover */
+    padding: 0;
+    line-height: 1; /* Ensures 'x' is vertically centered */
+}
+
+.modal-close-button:hover {
+    color: var(--text-color-light); /* Brighter on hover */
+}
+
+/* Body section of the modal, where main content goes */
+.modal-body {
+    font-size: 1em; /* Adjusted to 1em, let it inherit for slight variations */
+    line-height: 1.6;
+    color: var(--text-color-medium); /* Slightly muted for body text */
+}
+
+/* Styles for forms specifically inside modals */
+.modal-form .form-group {
+    margin-bottom: 15px; /* Slightly less margin for form groups */
+}
+
+.modal-form label {
+    display: block; /* Makes label take its own line */
+    margin-bottom: 5px; /* Space between label and input */
+    font-weight: 600; /* Bolder label */
+    color: var(--text-color-medium); /* Label text color */
+}
+
+.modal-form input[type="text"],
+.modal-form textarea {
+    width: calc(100% - 20px); /* Full width minus padding */
+    padding: 10px; /* Slightly reduced padding */
+    border: 1px solid var(--border-color-light); /* Input border */
+    border-radius: var(--border-radius-sm); /* Using your border-radius-sm */
+    background-color: var(--bg-color-light); /* Input background */
+    color: var(--text-color-light); /* Input text color */
+    font-size: 1em;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.modal-form input[type="text"]:focus,
+.modal-form textarea:focus {
+    border-color: var(--primary-color); /* Highlight border on focus */
+    box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.3); /* Subtle focus glow matching your app.css */
+    outline: none; /* Remove default outline */
+}
+
+.modal-form textarea {
+    resize: vertical; /* Allow user to resize textarea vertically */
+    min-height: 80px;
+}
+
+/* Container for action buttons within the modal (e.g., Save, Cancel, Delete) */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end; /* Align buttons to the right */
+    gap: 10px; /* Space between buttons */
+    margin-top: 25px; /* Space above buttons */
+    padding-top: 15px; /* Space above the border-top */
+    border-top: 1px solid var(--border-color-light); /* Separator line */
+}
+
+/* Reusing your button styles from App.css, ensuring consistency */
+.modal-actions .btn-primary,
+.modal-actions .btn-secondary,
+.modal-actions .btn-danger {
+    padding: 0.75rem 1.2rem; /* Using your app.css button padding */
+    border: none;
+    border-radius: var(--border-radius-sm); /* Using your app.css button radius */
+    cursor: pointer;
+    font-weight: 600;
+    transition: background var(--transition), transform 0.2s ease;
+}
+
+.modal-actions .btn-primary {
+    background-color: var(--primary-color);
+    color: var(--text-color-light);
+}
+
+.modal-actions .btn-primary:hover {
+    background-color: var(--secondary-color); /* Use secondary-color for hover */
+    transform: translateY(-1px);
+}
+
+.modal-actions .btn-secondary {
+    background-color: var(--bg-color-light); /* A lighter dark background for secondary button */
+    color: var(--text-color-light);
+    border: 1px solid var(--border-color-light); /* Subtle border */
+}
+
+.modal-actions .btn-secondary:hover {
+    background-color: var(--bg-color-medium); /* Darker on hover */
+    transform: translateY(-1px);
+}
+
+.modal-actions .btn-danger {
+    background-color: var(--accent-color); /* Using your accent-color for danger */
+    color: var(--text-color-light);
+}
+
+.modal-actions .btn-danger:hover {
+    background-color: #c0392b; /* A slightly darker red for hover */
+    transform: translateY(-1px);
+}
+
+/* Disable styles for buttons inside modals (matches app.css) */
+.modal-actions button:disabled {
+    background-color: var(--bg-color-light);
+    color: var(--text-color-dark);
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Animation for modal entry */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 600px) {
+    .modal-content-container {
+        width: 95%;
+        padding: 20px;
+    }
+
+    .modal-title {
+        font-size: 1.5em;
+    }
+
+    .modal-close-button {
+        font-size: 1.8em;
+    }
+
+    .modal-actions {
+        flex-direction: column; /* Stack buttons vertically on small screens */
+        gap: 10px;
+    }
+
+    .modal-actions .btn-primary,
+    .modal-actions .btn-secondary,
+    .modal-actions .btn-danger {
+        width: 100%; /* Make buttons full width */
+    }
+}

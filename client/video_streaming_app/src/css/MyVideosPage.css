@@ -1,0 +1,99 @@
+/* src/css/MyVideosPage.css */
+
+/* Overall layout for the page, similar to Dashboard or VideoPlayerPage */
+.my-videos-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Ensures the layout takes at least the full viewport height */
+    background-color: var(--bg-color-dark); /* Using your global dark background */
+    color: var(--text-color-light); /* Using your global light text color */
+}
+
+/* Main content area (excluding header and footer) */
+.my-videos-main-content {
+    display: flex;
+    flex: 1; /* Allows this section to grow and fill available space */
+}
+
+/* Content area where videos will be displayed, next to the sidebar */
+.my-videos-content-area {
+    flex: 1; /* Takes up remaining space after sidebar */
+    padding: 2rem; /* Consistent padding around content */
+    margin-left: 250px; /* Adjust this to match your Sidebar's width */
+    padding-top: 60px; /* Space for fixed header if you have one */
+    position: relative; /* For absolute positioning of spinners if needed */
+}
+
+/* Title for the "My Uploaded Videos" section */
+.my-videos-title {
+    font-size: 2.5rem;
+    color: var(--primary-color); /* Your primary accent color */
+    margin-bottom: 2rem;
+    text-align: center;
+    font-weight: 700;
+    text-shadow: 0 0 10px rgba(88, 101, 242, 0.3); /* Subtle glow */
+}
+
+/* Grid layout for displaying video cards */
+.video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Responsive grid columns */
+    gap: 2rem; /* Space between video cards */
+    justify-content: center; /* Center items if they don't fill the row */
+    padding-top: 1rem; /* Space above the grid */
+}
+
+/* Message for when no videos are uploaded or an error occurs */
+.placeholder-text,
+.error-message-my-videos {
+    text-align: center;
+    font-size: 1.2rem;
+    color: var(--text-color-dark); /* Muted text for informational messages */
+    margin-top: 50px;
+}
+
+.error-message-my-videos {
+    color: var(--accent-color); /* Red for error messages */
+    font-weight: 600;
+}
+
+/* --- Responsive Adjustments --- */
+
+/* For tablets and smaller desktops */
+@media (max-width: 1024px) {
+    .my-videos-content-area {
+        margin-left: 0; /* Sidebar might collapse or become an overlay */
+        padding: 1.5rem;
+        padding-top: 70px; /* More space for header if it's taller on mobile */
+    }
+
+    .video-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+/* For mobile devices */
+@media (max-width: 768px) {
+    .my-videos-main-content {
+        flex-direction: column; /* Stack sidebar and content vertically */
+    }
+
+    .my-videos-content-area {
+        padding: 1rem;
+        padding-top: 80px; /* Increased padding for mobile header */
+    }
+
+    .my-videos-title {
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .video-grid {
+        grid-template-columns: 1fr; /* Single column on very small screens */
+        gap: 1rem;
+    }
+
+    /* Adjust sidebar behavior for mobile here if it becomes overlay/hidden */
+    /* Example: .sidebar { position: fixed; width: 100%; height: 100%; ... } */
+}

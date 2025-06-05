@@ -8,6 +8,7 @@ import Footer from "./components/Footer";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+import MyVideosPage from "./pages/MyVideosPage";
 import ProfilePage from "./pages/ProfilePage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -18,24 +19,30 @@ export default function App() {
   const { isAuthenticated, loadingAuth } = useContext(AuthContext);
 
   // Conditional redirect for the root path (/)
-   const renderRootRoute = () => {
+  const renderRootRoute = () => {
     if (loadingAuth) {
       // Render the LoadingSpinner while authentication status is being determined
       // Wrap it in a div for full-screen centering if needed, or adjust LoadingSpinner's own CSS
       return (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh', // Take full viewport height
-          backgroundColor: 'var(--bg-color-dark)' // Match app background
-        }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "100vh", // Take full viewport height
+            backgroundColor: "var(--bg-color-dark)", // Match app background
+          }}
+        >
           <LoadingSpinner message="Checking authentication..." />
         </div>
       );
     }
     // Once loadingAuth is false, navigate based on isAuthenticated
-    return isAuthenticated ? <Navigate to="/dashboard" /> : <Navigate to="/login" />;
+    return isAuthenticated ? (
+      <Navigate to="/dashboard" />
+    ) : (
+      <Navigate to="/login" />
+    );
   };
 
   return (
@@ -64,6 +71,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-videos" // This is the URL path for your new page
+          element={
+            <ProtectedRoute>
+              <MyVideosPage />{" "}
+              {/* This tells React to render MyVideosPage when the path matches */}
             </ProtectedRoute>
           }
         />

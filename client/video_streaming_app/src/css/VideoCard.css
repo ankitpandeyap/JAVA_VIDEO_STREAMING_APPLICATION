@@ -118,3 +118,39 @@
 .video-thumbnail-placeholder span {
     max-width: 80%; /* Prevent text from overflowing */
 }
+.video-actions {
+    display: flex;
+    justify-content: space-around; /* Distribute buttons evenly */
+    padding: 10px;
+    background-color: var(--bg-color-medium); /* Match card background */
+    border-top: 1px solid var(--border-color-light); /* Separator */
+    border-bottom-left-radius: var(--border-radius-md); /* Match card border radius */
+    border-bottom-right-radius: var(--border-radius-md);
+}
+
+.video-actions button {
+    /* Inherit basic button styles from global App.css */
+    flex: 1; /* Make buttons take equal space */
+    margin: 0 5px; /* Small gap between buttons */
+    padding: 8px 12px; /* Slightly smaller padding for these buttons */
+    font-size: 0.9em;
+    font-weight: 500; /* Not as bold as primary buttons */
+}
+
+.video-actions .btn-edit {
+    background-color: #007bff; /* A standard blue for edit */
+    color: white;
+}
+
+.video-actions .btn-edit:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+
+.video-actions .btn-delete {
+    background-color: var(--accent-color); /* Your red accent color for delete */
+    color: white;
+}
+
+.video-actions .btn-delete:hover {
+    background-color: #c0392b; /* A slightly darker red on hover */
+}

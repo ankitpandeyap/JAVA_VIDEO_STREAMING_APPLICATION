@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }) => {
     // Provide the state variables and functions to components consuming this context
     return (
         <AuthContext.Provider
-            value={{ isAuthenticated, login, logout, accessToken, loadingAuth, updateToken, attemptRefreshFromExternal }}
+            value={{ isAuthenticated, login, logout, accessToken, loadingAuth, updateToken }}
         >
             {/* Conditionally render children or a loading indicator based on loadingAuth state */}
             {loadingAuth ? (
