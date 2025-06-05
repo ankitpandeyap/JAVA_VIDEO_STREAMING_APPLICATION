@@ -139,7 +139,7 @@ const MyVideosPage = () => {
             <div className="my-videos-main-content">
                 <Sidebar />
                 <div className="my-videos-content-area">
-                    <h1 className="my-videos-title">My Uploaded Videos</h1>
+                   
                     {loading ? (
                         <LoadingSpinner /> // Show full-page spinner while loading videos
                     ) : error ? (

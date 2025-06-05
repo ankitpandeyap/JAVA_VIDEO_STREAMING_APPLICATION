@@ -1,15 +1,34 @@
-/* src/css/ProfilePage.css - MODIFIED FOR DARK THEME */
+/* src/css/ProfilePage.css - MODIFIED FOR DARK THEME AND INTERACTIVITY */
+
+/* Define custom properties if not already in a global variables file */
+:root {
+    --bg-color-dark: #1a1a2e; /* Deep dark background */
+    --bg-color-medium: #1f2041; /* Slightly lighter dark for cards */
+    --bg-color-light: #2c2b4d; /* Even lighter dark for detail sections */
+    --text-color-light: #e0e0e0; /* Light text for readability */
+    --text-color-medium: #a0a0a0; /* Muted light text for labels/subtitles */
+    --primary-color: #5865f2; /* A vibrant blue for accents */
+    --accent-color: #00bcd4; /* Cyan for secondary accents/highlights */
+    --danger-color: #dc3545; /* Red for errors */
+    --border-color-light: rgba(255, 255, 255, 0.1); /* Light border for separation */
+    --border-color-medium: rgba(255, 255, 255, 0.07); /* Muted border */
+    --border-radius-sm: 5px;
+    --border-radius-md: 10px;
+    --border-radius-lg: 15px;
+    --header-height: 64px; /* Assuming your Header component is 64px tall */
+}
 
 .main-layout {
     display: flex;
-    /* Use --header-height for consistency if defined globally, otherwise keep 64px */
-    min-height: calc(100vh - var(--header-height, 64px)); /* Fallback to 64px if --header-height is not defined */
-    background-color: var(--bg-color-dark); /* Main dark background */
-    color: var(--text-color-light); /* Default light text color for the layout */
+    min-height: calc(100vh - var(--header-height)); /* Ensure it fills remaining viewport height below header */
+    background: var(--bg-color-dark);
+    color: var(--text-color-light);
+    /* Added a subtle background pattern for depth */
+    background-image: radial-gradient(circle at 1% 1%, rgba(255, 255, 255, 0.01) 5%, transparent 5%),
+                      radial-gradient(circle at 99% 99%, rgba(255, 255, 255, 0.01) 5%, transparent 5%);
+    background-size: 20px 20px; /* Adjust size of the pattern */
+    background-position: 0 0, 100% 100%; /* Position of the pattern */
 }
-
-/* Consider if you still use .sidebar in this layout or a direct sidebar component */
-/* The Sidebar component's own CSS should handle its styling */
 
 .profile-content-area {
     flex-grow: 1; /* Takes remaining space */
@@ -18,6 +37,8 @@
     display: flex;
     flex-direction: column;
     align-items: center; /* Center content horizontally */
+    justify-content: center; /* Vertically center the profile card */
+    min-height: 100%; /* Ensures this div takes full height of main-layout's available space */
 }
 
 .profile-container {
@@ -25,9 +46,38 @@
     width: 100%;
     background-color: var(--bg-color-medium); /* Slightly lighter dark for the main profile card */
     border-radius: var(--border-radius-lg); /* Larger radius for a prominent card */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Darker shadow */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), /* More pronounced shadow */
+                0 0 0 1px rgba(255, 255, 255, 0.05); /* Subtle inner glow/border */
     padding: 2.5rem;
-    margin-bottom: 2rem; /* Space below the profile card */
+    margin-bottom: 2rem; /* Space below the profile card if more content follows */
+    position: relative; /* For potential pseudo-elements or absolute positioning */
+    overflow: hidden; /* Hide overflowing content/shadows */
+}
+
+.profile-container::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    left: -50px;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, var(--primary-color) 0%, transparent 70%);
+    opacity: 0.05;
+    z-index: 0;
+    filter: blur(50px);
+}
+
+.profile-container::after {
+    content: '';
+    position: absolute;
+    bottom: -50px;
+    right: -50px;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, var(--accent-color) 0%, transparent 70%);
+    opacity: 0.05;
+    z-index: 0;
+    filter: blur(45px);
 }
 
 .profile-header {
@@ -35,19 +85,17 @@
     margin-bottom: 2rem;
     border-bottom: 1px solid var(--border-color-light); /* Lighter border for separation */
     padding-bottom: 1.5rem;
+    position: relative; /* Ensure it stays above pseudo-elements */
+    z-index: 1;
 }
 
 .profile-title {
-    font-size: 2.5rem; /* Larger title */
+    font-size: 2.8rem; /* Even larger title */
     color: var(--primary-color); /* Use primary color for the main title */
     margin-bottom: 0.5rem;
     font-weight: 700;
-}
-
-.profile-subtitle {
-    font-size: 1.2rem;
-    color: var(--text-color-medium); /* Muted light text for subtitle */
-    font-weight: 400;
+    letter-spacing: 0.05em; /* A little spacing for style */
+    text-shadow: 0 0 15px rgba(88, 101, 242, 0.5); /* Stronger glow */
 }
 
 .profile-details {
@@ -56,64 +104,109 @@
     padding: 2rem;
     margin-top: 1.5rem;
     border: 1px solid var(--border-color-light); /* Light border for separation */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Subtle internal shadow */
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.15), /* Inset shadow for depth */
+                0 0 0 1px rgba(255, 255, 255, 0.03); /* Very subtle edge highlight */
+    position: relative; /* Ensure it stays above pseudo-elements */
+    z-index: 1;
 }
 
 .profile-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 0;
-    /* Changed to --border-color-medium or a custom color for better visibility on dark background */
-    border-bottom: 1px dashed var(--border-color-medium, hsla(0, 0%, 50%, 0.3));
+    padding: 1.2rem 0; /* Increased padding for more space */
+    border-bottom: 1px dashed var(--border-color-medium);
+    transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transition */
 }
 
 .profile-item:last-child {
     border-bottom: none; /* No border for the last item */
 }
 
+.profile-item:hover {
+    background-color: rgba(0, 0, 0, 0.1); /* Subtle highlight on hover */
+    transform: translateY(-2px); /* Slight lift on hover */
+    cursor: default; /* Indicate it's not clickable, just for visual feedback */
+}
+
 .profile-label {
     font-weight: 600;
     color: var(--text-color-medium); /* Muted light text for labels */
-    font-size: 1rem;
+    font-size: 1.05rem; /* Slightly larger font */
+    text-transform: uppercase; /* Uppercase for labels */
+    letter-spacing: 0.03em;
 }
 
 .profile-value {
     color: var(--text-color-light); /* Light text for values */
-    font-size: 1.05rem;
+    font-size: 1.1rem; /* Slightly larger font */
     word-break: break-all; /* Ensure long values wrap */
     text-align: right;
+    font-weight: 500;
 }
 
 .loading-profile,
 .error-profile,
 .no-profile-data {
     text-align: center;
-    font-size: 1.1rem;
-    color: var(--text-color-dark); /* Darker muted text for info/messages */
-    padding: 3rem;
+    font-size: 1.3rem; /* Larger font for messages */
+    color: var(--text-color-medium); /* Darker muted text for info/messages */
+    padding: 4rem; /* More padding */
+    font-weight: 500;
 }
 
 .error-message {
-    /* Changed to --danger-color for explicit error indication */
-    color: var(--danger-color, #dc3545); /* Fallback to a common red if --danger-color is not defined */
-    font-weight: 600;
-    margin-top: 1rem;
+    color: var(--danger-color); /* Explicit red for error indication */
+    font-weight: 700; /* Bolder error text */
+    margin-top: 1.5rem; /* More margin */
+    text-shadow: 0 0 8px rgba(220, 53, 69, 0.3); /* Subtle glow for error */
 }
 
-/* Placeholder for responsive design */
+/* Optional buttons style (if you uncomment them in JSX) */
+.profile-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem; /* Space between buttons */
+    margin-top: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.btn-secondary {
+    background-color: var(--bg-color-light);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    padding: 0.8rem 1.8rem;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+.btn-secondary:hover {
+    background-color: var(--primary-color);
+    color: var(--text-color-light);
+    box-shadow: 0 0 15px rgba(88, 101, 242, 0.6);
+    transform: translateY(-2px);
+}
+
+
+/* --- Responsive Adjustments --- */
+
 @media (max-width: 768px) {
+    .profile-content-area {
+        padding: 1.5rem;
+    }
+
     .profile-container {
         padding: 2rem;
         border-radius: var(--border-radius-md);
     }
 
-    .profile-header {
-        margin-bottom: 1.5rem;
-    }
-
     .profile-title {
-        font-size: 2rem;
+        font-size: 2.2rem;
     }
 
     .profile-details {
@@ -123,11 +216,24 @@
     .profile-item {
         flex-direction: column;
         align-items: flex-start;
-        gap: 0.5rem;
+        gap: 0.4rem; /* Reduced gap */
+        padding: 1rem 0;
     }
 
     .profile-value {
         text-align: left;
+        font-size: 1rem; /* Slightly smaller value text */
+    }
+
+    .profile-label {
+        font-size: 0.95rem; /* Slightly smaller label text */
+    }
+
+    .loading-profile,
+    .error-profile,
+    .no-profile-data {
+        font-size: 1.1rem;
+        padding: 2rem;
     }
 }
 
@@ -138,13 +244,18 @@
 
     .profile-container {
         padding: 1.5rem;
+        border-radius: var(--border-radius-sm);
     }
 
     .profile-title {
-        font-size: 1.75rem;
+        font-size: 1.8rem;
     }
 
     .profile-details {
         padding: 1rem;
+    }
+
+    .profile-item {
+        padding: 0.8rem 0;
     }
 }

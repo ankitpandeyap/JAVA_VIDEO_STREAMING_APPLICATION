@@ -46,7 +46,7 @@ const Dashboard = () => {
             <div className="dashboard-main-content">
                 <Sidebar />
                 <div className="dashboard-content-area">
-                    <h1 className="dashboard-title">Discover Videos</h1>
+                  
                     {loading ? (
                         <LoadingSpinner /> // Show loading spinner
                     ) : error ? (

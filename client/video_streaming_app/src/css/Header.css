@@ -1,5 +1,19 @@
+:root {
+    /* Define your CSS variables here if not already defined globally */
+    --bg-color-medium: #282c34;
+    --primary-color: #61dafb; /* A light blue, similar to React's blue */
+    --text-color-medium: #e0e0e0;
+    --text-color-light: #ffffff;
+    --text-color-dark-bg: #282c34;
+    --accent-color: #e74c3c; /* Red for logout */
+    --highlight-color: #2ecc71; /* Green for upload */
+    --border-radius-sm: 5px;
+    --font-family: 'Arial', sans-serif; /* Example font */
+}
+
 .header-bar {
     display: flex;
+    /* Use space-between to push items to the ends and allow center item to truly center */
     justify-content: space-between;
     align-items: center;
     padding: 16px 32px;
@@ -13,16 +27,58 @@
     min-height: 60px;
 }
 
+/* Container for just the logo */
+.header-logo-container {
+    /* Flex-grow 1 allows this container to take up available space on the left */
+    flex-grow: 1;
+    display: flex; /* Ensure content inside is handled by flex */
+    justify-content: flex-start; /* Align logo to the start (left) */
+    align-items: center;
+    min-width: 100px; /* Ensure logo has some minimum space */
+}
+
 .header-logo {
     font-size: 24px;
     font-weight: 700;
-    color: var(--primary-color);
 }
+
+.header-logo a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+/* Container for the page title, placed in the center */
+.header-page-title-container {
+    /* This is crucial: text-align center for its content */
+    text-align: center;
+    /* This allows the title container to grow and fill available space,
+       but its content (the h1) will be centered within it. */
+    flex-grow: 1;
+    /* Optional: Limit max width if you want to prevent titles from getting too wide
+       and pushing other elements. Adjust based on your design. */
+    max-width: 50%; /* Example: Title container can take up to 50% of header width */
+}
+
+/* Style for the dynamic page header (the h1 itself) */
+.page-header-title {
+    font-size: 1.5em;
+    color: var(--text-color-light);
+    margin: 0; /* Remove default margin from h1 */
+    white-space: nowrap; /* Prevent title from wrapping */
+    overflow: hidden; /* Hide overflow if it's too long */
+    text-overflow: ellipsis; /* Add ellipsis for clipped text */
+    /* No max-width here, as it's handled by its parent .header-page-title-container */
+}
+
 
 .header-nav {
     display: flex;
     align-items: center;
-    gap: 20px; /* This creates 20px space between all direct children of .header-nav */
+    gap: 20px;
+    /* Flex-grow 1 allows this container to take up available space on the right */
+    flex-grow: 1;
+    justify-content: flex-end; /* Align nav items to the end (right) */
+    min-width: 200px; /* Ensure nav has some minimum space */
 }
 
 .header-nav .header-link {
@@ -65,13 +121,81 @@
     transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
+.upload-video-btn:hover {
+    background-color: #27ae60;
+    transform: translateY(-1px);
+}
+
+/* --- Media Queries --- */
 @media (max-width: 768px) {
+    .header-bar {
+        padding: 10px 15px;
+    }
+
+    .header-logo-container {
+        flex-grow: 0.5; /* Allow it to grow less */
+        min-width: unset; /* Remove min-width on smaller screens */
+    }
+
+    .header-logo {
+        font-size: 20px;
+    }
+
+    .header-page-title-container {
+        flex-grow: 2; /* Allow title to take more space */
+        max-width: 60%; /* Can be slightly wider on tablets */
+    }
+
+    .page-header-title {
+        font-size: 1.2em;
+    }
+
     .header-nav {
-        gap: 10px; /* Reduce gap on smaller screens for header buttons */
+        flex-grow: 0.5; /* Allow it to grow less */
+        gap: 10px;
+        min-width: unset; /* Remove min-width on smaller screens */
     }
     .header-nav .upload-video-btn,
     .header-nav .header-logout-btn {
         padding: 6px 12px;
         font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-bar {
+        flex-wrap: wrap; /* Allow items to wrap */
+        justify-content: center;
+        padding: 10px;
+    }
+
+    .header-logo-container,
+    .header-page-title-container,
+    .header-nav {
+        flex-grow: 0; /* Disable growing when wrapping */
+        width: 100%; /* Take full width when wrapped */
+        justify-content: center; /* Center content when wrapped */
+        text-align: center; /* Ensure text alignment for title */
+        margin-bottom: 10px; /* Add space between wrapped sections */
+    }
+
+    /* Remove margin-bottom from the last child of header-bar when wrapped */
+    .header-bar > *:last-child {
+        margin-bottom: 0;
+    }
+
+    .header-page-title-container {
+        order: 1; /* Place title first in wrapped layout */
+        max-width: 100%; /* Allow title to take full width */
+    }
+    .header-logo-container {
+        order: 2; /* Place logo second */
+    }
+    .header-nav {
+        order: 3; /* Place nav last */
+    }
+
+    .page-header-title {
+        font-size: 1em; /* Further reduce font size for very small screens */
     }
 }

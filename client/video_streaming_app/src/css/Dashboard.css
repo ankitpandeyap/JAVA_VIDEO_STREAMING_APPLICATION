@@ -1,3 +1,16 @@
+/* src/css/Dashboard.css */
+
+/* Define your CSS variables here if not already defined globally in a root stylesheet */
+:root {
+    --bg-color-dark: #1a1a1a; /* Dark background for pages */
+    --text-color-light: #ffffff; /* Light text for dark backgrounds */
+    --text-color-dark: #cccccc; /* Slightly darker text for contrast */
+    --border-color-dark: #444; /* Dark border color */
+    --font-family: 'Arial', sans-serif; /* Example font, use your preferred font */
+    /* Add other variables if used elsewhere (e.g., --bg-color-medium, --primary-color, etc.) */
+}
+
+
 .dashboard-layout {
     display: flex;
     flex-direction: column;
@@ -7,7 +20,7 @@
 
 .dashboard-main-content {
     display: flex;
-    flex: 1;
+    flex: 1; /* Allows this content area to grow and take remaining space */
     background-color: var(--bg-color-dark);
     /* Add padding-top to prevent content from going under the sticky header */
     padding-top: 60px; /* This value might need minor tweaking depending on your header's exact height */
@@ -15,17 +28,23 @@
 
 /* This is the main content area to the right of the sidebar */
 .dashboard-content-area {
-    flex-grow: 1;
-    padding: 1.5rem 2rem; /* Keep consistent padding */
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    /* Optional: Center content horizontally within its available space if it's narrower than the container */
-    /* If you want the grid itself to be centered when there's extra space: */
-    /* display: flex; */
-    /* flex-direction: column; */
-    /* align-items: center; */ /* This centers the content if it's narrower than the content area */
+    flex-grow: 1; /* Allows it to take all available space */
+    padding: 1.5rem 2rem; /* Consistent padding */
+    overflow-y: auto; /* Enables scrolling if content overflows vertically */
+    -webkit-overflow-scrolling: touch; /* Improves scrolling on iOS devices */
+
+    /* --- FLEXBOX PROPERTIES TO CENTER CONTENT WITHIN THIS AREA --- */
+    display: flex; /* Make it a flex container */
+    flex-direction: column; /* Stack content vertically */
+    align-items: center; /* Centers items horizontally along the cross-axis (horizontally for column direction) */
+    justify-content: center; /* Centers items vertically along the main-axis (vertically for column direction) */
+    /* Only if content is shorter than the available vertical space.
+       For very long content, this will effectively align-items: flex-start; at the top. */
 }
 
+/* Styles for the main title, though it's now in the Header component */
+/* You might not need this if all titles are in Header.jsx, but keeping it
+   here in case it's used for other sub-sections. */
 .dashboard-title {
     font-size: 2.2rem;
     color: var(--text-color-light);
@@ -33,25 +52,43 @@
     font-weight: 700;
     border-bottom: 1px solid var(--border-color-dark);
     padding-bottom: 1rem;
-    text-align: left; /* Default to left for larger screens */
+    text-align: center; /* Center the title itself if it's still present here */
+    width: 100%; /* Ensure it spans full width to center effectively */
+    max-width: 900px; /* Optional: limit title width on very wide screens */
 }
 
-/* Styles for the video grid placeholder, and later, the actual video grid */
-.video-grid-placeholder {
+/* Styles for the video grid */
+.video-grid {
     display: grid;
-    /* Made minmax even smaller to accommodate more videos and reduce congestion */
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Adjusted minmax for smaller cards */
+    /* Adjusted minmax for smaller cards to fit more videos */
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1.5rem; /* Space between video cards */
     padding-top: 1rem;
-    justify-content: center; /* Center grid items if they don't fill the row */
+    width: 100%; /* Important: Allows the grid to be centered by its flex parent */
+    max-width: 1200px; /* Max width for the grid to prevent stretching on very wide screens */
+    margin: 0 auto; /* Centers the grid itself if its max-width is hit */
 }
 
+/* Styles for the placeholder text when no videos are found */
 .placeholder-text {
-    grid-column: 1 / -1; /* Make placeholder span all columns */
-    text-align: center;
+    /* If .dashboard-content-area is flex, grid-column is not strictly necessary for centering,
+       but it was good for the previous grid layout. */
+    /* When parent is flex (column) and align-items: center,
+       setting width: 100% ensures it takes full available width to center its own text content. */
+    width: 100%;
+    text-align: center; /* Centers the text within the paragraph */
     color: var(--text-color-dark);
     font-size: 1.1rem;
     padding: 3rem;
+}
+
+/* Error message styling */
+.error-message-dashboard {
+    text-align: center;
+    color: #e74c3c; /* Red color for error messages */
+    font-size: 1.1rem;
+    padding: 2rem;
+    width: 100%; /* Ensure it takes full width to be centered */
 }
 
 /* Responsive adjustments for smaller screens */
@@ -62,7 +99,7 @@
     .dashboard-title {
         font-size: 2rem;
     }
-    .video-grid-placeholder {
+    .video-grid {
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Further reduced minmax */
         gap: 1.2rem;
     }
@@ -70,19 +107,23 @@
 
 @media (max-width: 768px) {
     .dashboard-main-content {
-        flex-direction: column;
-        padding-top: 0;
+        flex-direction: column; /* Stack sidebar and content vertically */
+        padding-top: 0; /* Remove top padding as header will wrap on smaller screens */
     }
     .dashboard-content-area {
         padding: 1rem;
+        /* When dashboard-main-content is column, this can grow */
+        flex-grow: 1; /* Allow content area to fill remaining vertical space */
+        min-height: calc(100vh - 60px - var(--footer-height, 50px)); /* Example: adjust for header/footer */
     }
+    /* Dashboard title is now in Header, but if a sub-title is here: */
     .dashboard-title {
         font-size: 1.8rem;
-        text-align: center; /* Center title on smaller screens as requested */
+        text-align: center; /* Center title on smaller screens */
         margin-bottom: 1.2rem;
         padding-bottom: 0.8rem;
     }
-    .video-grid-placeholder {
+    .video-grid {
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Even smaller for mobile */
         gap: 1rem;
     }
@@ -92,12 +133,13 @@
     .dashboard-content-area {
         padding: 0.75rem;
     }
+    /* Dashboard title adjustments if still present in content area */
     .dashboard-title {
         font-size: 1.5rem;
         margin-bottom: 1rem;
         padding-bottom: 0.6rem;
     }
-    .video-grid-placeholder {
+    .video-grid {
         grid-template-columns: 1fr; /* Single column on very small screens */
         gap: 0.8rem;
     }
