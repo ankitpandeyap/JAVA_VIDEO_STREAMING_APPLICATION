@@ -25,23 +25,7 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
-    // Function to proactively attempt token refresh, called by external components (e.g., SseContext)
-    const attemptRefreshFromExternal = useCallback(async () => {
-        try {
-            // This call will go through the Axios interceptor, which handles the refresh.
-            // If successful, interceptor calls authUpdateToken(newToken).
-            // If failed, interceptor calls authUpdateToken(null) and handles redirect/toast.
-            await axiosInstance.post('/auth/refresh', {}, { withCredentials: true });
-        } catch (error) {
-            // The interceptor should have handled the error (toast, logout etc.)
-            // This catch is mainly for any errors not caught by the interceptor's own try/catch for refresh.
-            console.error("AuthContext: Error during externally triggered refresh attempt:", error); // Keeping console.error
-            // As a final fallback, ensure logout if the state is still authenticated
-            if (isAuthenticated) {
-                updateToken(null); // Force logout if interceptor didn't already
-            }
-        }
-    }, [isAuthenticated, updateToken]); // Dependencies for useCallback
+    
 
     // Set the updateToken function in the axiosInstance for interceptor use
     useEffect(() => {

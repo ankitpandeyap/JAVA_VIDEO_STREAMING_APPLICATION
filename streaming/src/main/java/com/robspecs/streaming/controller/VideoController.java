@@ -215,8 +215,7 @@ public class VideoController {
 					relativeFilePathToServe = video.getOriginalFilePath();
 					contentType = MediaType.parseMediaType("video/mp4");
 					return ResponseEntity.ok()
-							.header(HttpHeaders.CONTENT_DISPOSITION,
-									"attachment; filename=\"" + video.getVideoName() + ".mp4\"")
+							.header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + video.getVideoName() + ".mp4\"")
 							.contentType(contentType).contentLength(actualFileSize)
 							.body(fileStorageService.loadFileAsResource(relativeFilePathToServe));
 

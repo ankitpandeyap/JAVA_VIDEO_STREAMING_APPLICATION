@@ -1,37 +1,34 @@
-// src/components/UploadVideoModal.jsx
-
+// src/components/UploadVideoModal.jsx - COMPLETE CODE USING axiosInstance
 import React, { useState } from 'react';
-import axios from 'axios'; // Assuming you use axios for API calls
-import '../css/UploadVideoModal.css'; // Styling for the modal
+import axiosInstance from '../api/axiosInstance'; // --- IMPORTANT: Changed to import axiosInstance
+import { toast } from 'react-toastify'; // Import toast for consistent notifications
+import '../css/UploadVideoModal.css';
 
-// Dummy API URL for demonstration. Replace with your actual backend endpoint.
-const UPLOAD_API_URL = 'http://localhost:5000/api/videos/upload'; // **IMPORTANT: Replace with your actual backend URL**
+// The path will be relative to API_BASE_URL defined in axiosInstance.js
+const UPLOAD_PATH = '/videos/upload'; 
 
 const UploadVideoModal = ({ onClose, onUploadSuccess }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [videoFile, setVideoFile] = useState(null);
-    const [thumbnailFile, setThumbnailFile] = useState(null);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
-    const [uploadError, setUploadError] = useState('');
+    // Renamed uploadError to be consistent with toast usage, but kept for immediate form feedback
+    const [formError, setFormError] = useState(''); 
     const [uploadSuccess, setUploadSuccess] = useState(false);
 
-    const handleFileChange = (e, type) => {
-        if (type === 'video') {
-            setVideoFile(e.target.files[0]);
-        } else if (type === 'thumbnail') {
-            setThumbnailFile(e.target.files[0]);
-        }
+    const handleFileChange = (e) => {
+        setVideoFile(e.target.files[0]);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setUploadError('');
+        setFormError(''); // Clear previous form-specific errors
         setUploadSuccess(false);
 
-        if (!title || !description || !videoFile || !thumbnailFile) {
-            setUploadError('Please fill in all fields and select both files.');
+        if (!title || !description || !videoFile) {
+            setFormError('Please fill in all fields and select a video file.');
+            toast.error('Please fill in all fields and select a video file.'); // Toast for form validation
             return;
         }
 
@@ -41,15 +38,14 @@ const UploadVideoModal = ({ onClose, onUploadSuccess }) => {
         const formData = new FormData();
         formData.append('title', title);
         formData.append('description', description);
-        formData.append('video', videoFile);
-        formData.append('thumbnail', thumbnailFile);
+        formData.append('file', videoFile); // Backend's DTO expects 'file'
 
         try {
-            const response = await axios.post(UPLOAD_API_URL, formData, {
+            // Token handling is now automatically done by axiosInstance.interceptors.request.use
+            const response = await axiosInstance.post(UPLOAD_PATH, formData, { // --- IMPORTANT: Using axiosInstance.post
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                    // Add authorization header if your API requires it
-                    // 'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    // 'Authorization' header is added by the interceptor
                 },
                 onUploadProgress: (progressEvent) => {
                     const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -59,40 +55,50 @@ const UploadVideoModal = ({ onClose, onUploadSuccess }) => {
 
             if (response.status === 200 || response.status === 201) {
                 setUploadSuccess(true);
-                // Optionally, pass the uploaded video data back to the parent component
-                // onUploadSuccess(response.data.video);
+                toast.success('Video upload initiated successfully! Processing will begin shortly.'); // Success toast
                 setTitle('');
                 setDescription('');
                 setVideoFile(null);
-                setThumbnailFile(null);
 
-                // Auto-close modal or show success message then close
                 setTimeout(() => {
-                    onClose();
-                    // If you have a way to refresh dashboard data, call it here
-                    // onUploadSuccess();
+                    onClose(); // Close modal
+                    if (onUploadSuccess) {
+                        onUploadSuccess(); // Callback for parent component (e.g., to refresh video list)
+                    }
                 }, 2000); // Close after 2 seconds
             } else {
-                setUploadError(response.data.message || 'Video upload failed.');
+                // This block might be less hit if axios interceptors handle specific statuses
+                const message = response.data.message || 'Video upload failed due to an unknown reason.';
+                setFormError(message);
+                toast.error(message);
             }
         } catch (error) {
             console.error('Upload error:', error);
+            // Error handling from axiosInstance.js takes precedence for 401s (token expiry, etc.).
+            // For other errors, display specific messages using toast.
             if (error.response) {
-                setUploadError(error.response.data.message || 'Server error during upload.');
+                // For HTTP errors (e.g., 400 Bad Request, 500 Internal Server Error)
+                const errorMessage = error.response.data.message || error.response.data.error || `Server error: ${error.response.status}`;
+                setFormError(errorMessage); // For immediate form feedback
+                toast.error(errorMessage); // For global notification
             } else if (error.request) {
-                setUploadError('No response from server. Check your network connection.');
+                // For network errors (no response from server)
+                setFormError('No response from server. Please check your network connection.');
+                toast.error('No response from server. Please check your network connection.');
             } else {
-                setUploadError('Error setting up the upload request.');
+                // Other unexpected errors
+                setFormError('An unexpected error occurred during upload setup.');
+                toast.error('An unexpected error occurred during upload setup.');
             }
         } finally {
-            setIsUploading(false);
+            setIsUploading(false); // End uploading state
         }
     };
 
     return (
         <div className="modal-overlay">
             <div className="modal-content">
-                <button className="modal-close-button" onClick={onClose}>&times;</button>
+                <button className="modal-close-button" onClick={onClose} disabled={isUploading}>&times;</button>
                 <form className="upload-form" onSubmit={handleSubmit}>
                     <h2>Upload Your Video</h2>
 
@@ -126,22 +132,10 @@ const UploadVideoModal = ({ onClose, onUploadSuccess }) => {
                             type="file"
                             id="videoFile"
                             accept="video/*"
-                            onChange={(e) => handleFileChange(e, 'video')}
+                            onChange={handleFileChange}
                             disabled={isUploading}
                         />
                         {videoFile && <span className="file-name">{videoFile.name}</span>}
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="thumbnailFile">Select Thumbnail Image</label>
-                        <input
-                            type="file"
-                            id="thumbnailFile"
-                            accept="image/*"
-                            onChange={(e) => handleFileChange(e, 'thumbnail')}
-                            disabled={isUploading}
-                        />
-                        {thumbnailFile && <span className="file-name">{thumbnailFile.name}</span>}
                     </div>
 
                     {isUploading && (
@@ -154,7 +148,9 @@ const UploadVideoModal = ({ onClose, onUploadSuccess }) => {
                         </div>
                     )}
 
-                    {uploadError && <p className="upload-error-message">{uploadError}</p>}
+                    {/* Display form-specific errors directly in the form */}
+                    {formError && <p className="upload-error-message">{formError}</p>}
+                    {/* Display form-specific success message for a moment */}
                     {uploadSuccess && <p className="upload-success-message">Upload Successful!</p>}
 
                     <button type="submit" className="upload-button" disabled={isUploading}>
