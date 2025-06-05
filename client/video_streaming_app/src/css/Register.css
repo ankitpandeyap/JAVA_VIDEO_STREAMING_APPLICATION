@@ -57,6 +57,9 @@
     color: var(--text-color-light); /* Light text in inputs */
     font-size: 1rem;
     transition: var(--transition);
+    /* --- IMPORTANT: ENSURE FIXED HEIGHT FOR INPUTS --- */
+    height: 2.5rem; /* Standard height for inputs, consistent with buttons */
+    box-sizing: border-box; /* Include padding in height */
 }
 
 .register-form input:focus,
@@ -77,7 +80,8 @@
     background-size: 1.5em;
 }
 
-.register-button {
+/* Base button style (assuming .btn-primary is applied to your main buttons) */
+.btn-primary {
     background-color: var(--primary-color); /* Primary color for buttons */
     color: var(--text-color-light); /* White text */
     padding: 0.75rem 1.2rem;
@@ -87,9 +91,15 @@
     font-weight: 600;
     transition: var(--transition);
     width: 100%;
+    /* --- CRITICAL: Make buttons flex containers with fixed height to prevent shifting --- */
+    display: flex;
+    align-items: center; /* Center content vertically */
+    justify-content: center; /* Center content horizontally */
+    height: 2.5rem; /* FIXED HEIGHT to prevent layout shifts */
+    box-sizing: border-box; /* Include padding in total height */
 }
 
-.register-button:hover {
+.btn-primary:hover {
     background-color: var(--secondary-color); /* Secondary color on hover */
 }
 
@@ -128,6 +138,7 @@
     background-color: var(--bg-color-light);
     color: var(--text-color-light);
     transition: border-color var(--transition), box-shadow var(--transition);
+    box-sizing: border-box; /* Include padding in height */
 }
 
 .otp-input:focus {
@@ -145,6 +156,12 @@
     font-size: 0.9rem;
     font-weight: 600;
     transition: background-color var(--transition);
+    /* CRITICAL: Make this button a flex container with fixed height too */
+    display: flex;
+    align-items: center; /* Center content vertically */
+    justify-content: center; /* Center content horizontally */
+    height: 2.5rem; /* FIXED HEIGHT for the button */
+    box-sizing: border-box; /* Include padding in total height */
 }
 
 .otp-button:hover {
@@ -164,7 +181,7 @@
     text-align: center;
 }
 
-/* Passkey toggle button styling */
+/* Passkey toggle button styling (if used) */
 .passkey-toggle-btn {
     background: none;
     border: none;
@@ -180,23 +197,52 @@
     text-decoration: underline;
 }
 
-/* Loading spinner within buttons */
-.button-spinner {
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    border-top: 3px solid var(--text-color-light); /* White spinner on buttons */
+/* --- THE SINGLE DEFINITION FOR .spinner AND .button-spinner --- */
+
+/* This is the general spinner style, exactly as you provided for 'galaxy vibe' */
+.spinner {
+    width: 1em; /* Your requested size */
+    height: 1em; /* Your requested size */
+    border: 0.1em solid rgba(255, 255, 255, 0.4); /* Your requested border style */
+    border-top: 0.1em solid #ffffff; /* Your requested border-top color */
     border-radius: 50%;
-    width: 1.2rem;
-    height: 1.2rem;
-    animation: spin 1s linear infinite;
-    display: inline-block;
-    vertical-align: middle;
-    margin-left: 0.5rem;
+    animation: rotate 1.2s linear infinite; /* Your requested animation */
+    /* Ensure no extra margins by default, especially in flex containers */
+    margin: 0;
+    flex-shrink: 0; /* Prevents it from shrinking if space is tight */
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+/* This is the container for the spinner when used inside a button */
+/* It ensures the spinner is perfectly centered within the button's fixed height */
+.button-spinner {
+    display: flex;
+    align-items: center; /* Center vertically */
+    justify-content: center; /* Center horizontally */
+    height: 100%; /* Make this container fill the button's height */
+    width: 100%; /* Make this container fill the button's width */
+    padding: 0; /* Remove any internal padding */
+    margin: 0; /* Remove any internal margin */
 }
+
+/* The loading text. This element might not appear in a button, but defined for consistency. */
+.loading-text {
+    font-size: 0.8rem;
+    color: #555;
+    font-style: normal;
+    font-weight: 400;
+    margin-top: 0.5rem; /* This is for full-page spinners, not button spinners */
+}
+
+/* Your requested keyframe animation */
+@keyframes rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 
 /* Responsive adjustments */
 @media (max-width: 480px) {

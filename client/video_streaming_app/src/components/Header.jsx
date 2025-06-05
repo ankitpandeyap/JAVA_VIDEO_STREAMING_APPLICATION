@@ -1,12 +1,13 @@
-// src/components/Header.jsx - MODIFIED TO INCLUDE UPLOAD BUTTON AND MODAL
-
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom'; // Assuming you use React Router
-import '../css/Header.css'; // Your existing Header CSS
-import UploadVideoModal from './UploadVideoModal'; // Import the new UploadVideoModal
+import React, { useState, useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import '../css/Header.css';
+import UploadVideoModal from './UploadVideoModal';
+import { AuthContext } from '../context/AuthContext';
 
 const Header = () => {
     const [showUploadModal, setShowUploadModal] = useState(false);
+    const { isAuthenticated, logout } = useContext(AuthContext);
+    const navigate = useNavigate();
 
     const handleOpenUploadModal = () => {
         setShowUploadModal(true);
@@ -14,22 +15,18 @@ const Header = () => {
 
     const handleCloseUploadModal = () => {
         setShowUploadModal(false);
-        // You might want to refresh video list on dashboard after successful upload
-        // (This would be handled in Dashboard.jsx's useEffect, triggered by a state change
-        // or a global context update, or by passing a callback to onUploadSuccess if needed)
     };
 
-    // Dummy authentication check. Replace with actual auth context/logic.
-    const isAuthenticated = true; // For demonstration, assume user is logged in
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
 
     return (
         <header className="header-bar">
             <div className="header-logo">
-                <Link to="/">MyTube</Link> {/* Link to your home/dashboard */}
+                <Link to="/">MyTube</Link>
             </div>
-
-            {/* Optional: Central title if needed, otherwise remove */}
-            {/* <div className="header-title">Discover</div> */}
 
             <nav className="header-nav">
                 {isAuthenticated ? (
@@ -37,9 +34,9 @@ const Header = () => {
                         <button className="upload-video-btn" onClick={handleOpenUploadModal}>
                             Upload Video
                         </button>
-                        <Link to="/profile" className="header-link">Profile</Link>
-                        {/* Add actual logout logic here */}
-                        <button className="header-logout-btn" onClick={() => console.log('Logout clicked')}>Logout</button>
+                        {/* REMOVED: <Link to="/profile" className="header-link">Profile</Link> */}
+                        {/* REMOVED: <Link to="/my-videos" className="header-link">My Videos</Link> */}
+                        <button className="header-logout-btn" onClick={handleLogout}>Logout</button>
                     </>
                 ) : (
                     <>

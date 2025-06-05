@@ -1,66 +1,44 @@
-/* src/components/Header.css - MODIFIED FOR DARK THEME */
 .header-bar {
     display: flex;
-    justify-content: space-between; /* Pushes logo to left, nav to right */
+    justify-content: space-between;
     align-items: center;
     padding: 16px 32px;
-    background: var(--bg-color-medium); /* Dark background for header */
-    box-shadow: 0 2px 8px rgba(0,0,0,0.4); /* Darker shadow */
-    font-family: var(--font-family); /* Use global font */
-    position: sticky; /* Make header sticky */
+    background: var(--bg-color-medium);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    font-family: var(--font-family);
+    position: sticky;
     top: 0;
     width: 100%;
-    z-index: 1000; /* Ensure it stays on top */
-    min-height: 60px; /* Ensure a minimum height */
+    z-index: 1000;
+    min-height: 60px;
 }
 
 .header-logo {
     font-size: 24px;
     font-weight: 700;
-    color: var(--primary-color); /* Use primary accent color for logo */
+    color: var(--primary-color);
 }
 
-/* If you have a separate header title that centers */
-.header-title {
-    flex: 1;
-    text-align: center;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text-color-light); /* Light text color for title */
+.header-nav {
+    display: flex;
+    align-items: center;
+    gap: 20px; /* This creates 20px space between all direct children of .header-nav */
 }
 
 .header-nav .header-link {
-    margin-left: 24px;
     text-decoration: none;
-    color: var(--text-color-medium); /* Muted light text for links */
+    color: var(--text-color-medium);
     font-weight: 500;
     transition: color 0.2s;
 }
 
 .header-nav .header-link:hover {
-    color: var(--primary-color); /* Primary color on hover */
+    color: var(--primary-color);
 }
 
-/* Styles for the logout button in the header */
 .header-logout-btn {
-    background-color: var(--accent-color); /* Use accent color for logout */
-    color: var(--text-color-light); /* White text */
-    padding: 8px 16px;
-    border: none;
-    border-radius: var(--border-radius-sm); /* Use small border radius */
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-.header-logout-btn:hover {
-    background-color: #c0392b; /* Slightly darker red on hover for accent */
-    transform: translateY(-1px);
-}
-.upload-video-btn {
-    background-color: var(--highlight-color); /* Green accent for upload */
-    color: var(--text-color-dark-bg); /* Dark text on bright background */
+    background-color: var(--accent-color);
+    color: var(--text-color-light);
     padding: 8px 16px;
     border: none;
     border-radius: var(--border-radius-sm);
@@ -68,19 +46,32 @@
     font-size: 0.9rem;
     font-weight: 600;
     transition: background-color 0.3s ease, transform 0.2s ease;
-    margin-right: 15px; /* Space from other nav items */
 }
 
-.upload-video-btn:hover {
-    background-color: var(--secondary-color); /* Primary color on hover */
+.header-logout-btn:hover {
+    background-color: #c0392b;
     transform: translateY(-1px);
 }
 
-/* Ensure responsive behavior for the button in the header if the header itself is responsive */
+.upload-video-btn {
+    background-color: var(--highlight-color);
+    color: var(--text-color-dark-bg);
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
 @media (max-width: 768px) {
-    .header-nav .upload-video-btn {
+    .header-nav {
+        gap: 10px; /* Reduce gap on smaller screens for header buttons */
+    }
+    .header-nav .upload-video-btn,
+    .header-nav .header-logout-btn {
         padding: 6px 12px;
         font-size: 0.8rem;
-        margin-right: 10px;
     }
 }

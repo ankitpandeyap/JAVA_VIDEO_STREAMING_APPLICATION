@@ -21,7 +21,7 @@ const Dashboard = () => {
         try {
             // Assuming your backend has an endpoint like /api/videos/all
             // axiosInstance will automatically add the Authorization header and handle token refresh
-            const response = await axiosInstance.get('/videos/all'); 
+           const response = await axiosInstance.get('/videos');
             setVideos(response.data); // Set the fetched videos
             toast.success('Videos loaded successfully!'); // Success notification
         } catch (err) {

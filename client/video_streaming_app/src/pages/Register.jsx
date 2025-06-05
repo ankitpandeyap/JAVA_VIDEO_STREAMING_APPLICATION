@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axiosInstance from "../api/axiosInstance";
 import "../css/Register.css";
 import { useNavigate } from "react-router-dom";
@@ -10,56 +10,64 @@ const LoadingSpinner = ({ className }) => {
   return (
     <div className={className}>
       <div className="spinner"></div>
-      <p className="loading-text">Loading, please wait...</p>
+      {/* Conditionally render text only if it's not a button spinner */}
+      {/* This ensures "Loading, please wait..." doesn't appear inside buttons */}
+      {className !== "button-spinner" && <p className="loading-text">Loading, please wait...</p>}
     </div>
   );
 };
+
 // LoadingSpinner CSS (Overriding for Register Page)
-const loadingSpinnerCSS = `
-.button-spinner {
-  display: flex;
-  flex-direction: column; /* Stack items vertically */
-  align-items: center; /* Center horizontally */
-  justify-content: center; /* Center vertically */
-  height: 2.5rem;
-  width: 100%;
-}
+// const loadingSpinnerCSS = `
+// /* Styles for the container when used inside a button */
+// .button-spinner {
+//   display: flex;
+//   align-items: center; /* Center vertically within the button space */
+//   justify-content: center; /* Center horizontally */
+//   height: 2.5rem; /* Match your button's typical height */
+//   width: 100%; /* Take full width of button */
+// }
 
-.spinner {
-  width: 2rem;
-  height: 2rem;
-  border: 0.3em solid rgba(0, 0, 0, 0.2);
-  border-top: 0.3em solid #007bff;
-  border-radius: 50%;
-  animation: rotate 1.2s linear infinite;
-  margin-bottom: 0.5rem; /* Add space between spinner and text */
-}
+// /* Styles for the spinner itself - significantly smaller for button context */
+// .spinner {
+//   width: 1em;   /* Even smaller: 1em, which is roughly 16px by default */
+//   height: 1em;  /* Even smaller */
+//   border: 0.1em solid rgba(255, 255, 255, 0.4); /* Thinner border, slightly more transparent */
+//   border-top: 0.1em solid #ffffff; /* White border for spinner on dark buttons */
+//   border-radius: 50%;
+//   animation: rotate 1.2s linear infinite;
+//   /* Removed margin-bottom and margin-right for a compact, button-only spinner */
+// }
 
-.loading-text {
-  font-size: 0.8rem;
-  color: #555;
-  font-style: normal; /* Changed to normal */
-  font-weight: 400;  /*make the font normal weight */
-}
+// /* Styles for the loading text when used with a spinner (e.g., page-level loading) */
+// /* This part is generally for a larger, page-level spinner, not for buttons */
+// .loading-text {
+//   font-size: 0.8rem;
+//   color: #555; /* Adjust color as needed for your theme */
+//   font-style: normal;
+//   font-weight: 400;
+//   margin-top: 0.5rem; /* Add some space above text if spinner and text are stacked */
+// }
 
-@keyframes rotate {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-`;
+// /* Keyframe animation for rotation */
+// @keyframes rotate {
+//   0% {
+//     transform: rotate(0deg);
+//   }
+//   100% {
+//     transform: rotate(360deg);
+//   }
+// }
+// `;
 
 export default function Register() {
   const [email, setEmail] = useState("");
-  const [userName, setUserName] = useState(""); // Corrected to userName
+  const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
-  const [passkey, setPasskey] = useState("");
+  // const [passkey, setPasskey] = useState(""); // Removed passkey state
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState(1);
-  const [name, setName] = useState(""); // Corrected to name
+  const [name, setName] = useState("");
   const [role, setRole] = useState("USER");
   const navigate = useNavigate();
 
@@ -67,18 +75,17 @@ export default function Register() {
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
-  const [showPasskey, setShowPasskey] = useState(false);
+  // const [showPasskey, setShowPasskey] = useState(false); // Removed showPasskey state
 
-  useEffect(() => {
-    const style = document.createElement("style");
-    style.textContent = loadingSpinnerCSS; // Here's where loadingSpinnerCSS is used
-    document.head.appendChild(style);
+  // useEffect(() => {
+  //   const style = document.createElement("style");
+  //   style.textContent = loadingSpinnerCSS;
+  //   document.head.appendChild(style);
 
-    // Cleanup function: remove the style tag when the component unmounts
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []); // Empty dependency array ensures this runs only once on mount and once on unmount
+  //   return () => {
+  //     document.head.removeChild(style);
+  //   };
+  // }, []);
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
@@ -87,12 +94,12 @@ export default function Register() {
       const res = await axiosInstance.post(
         `/auth/otp/request?email=${encodeURIComponent(email)}`
       );
-      toast.success(res.data); // Backend sends "OTP sent to email@example.com"
+      toast.success(res.data);
       setStep(2);
     } catch (err) {
-      toast.error(err.response?.data || "Failed to send OTP"); // Error response might be directly the message
+      toast.error(err.response?.data || "Failed to send OTP");
     } finally {
-      setSendingOtp(false); // Stop loading
+      setSendingOtp(false);
     }
   };
 
@@ -116,13 +123,12 @@ export default function Register() {
         );
       }
     } catch (err) {
-      // The backend now sends the specific error message, e.g., "Invalid OTP." or "Too many failed attempts."
       toast.error(
         err.response?.data?.message ||
           "OTP verification failed: An unexpected error occurred."
       );
     } finally {
-      setVerifyingOtp(false); // Stop loading
+      setVerifyingOtp(false);
     }
   };
 
@@ -132,38 +138,35 @@ export default function Register() {
       toast.error("Please verify OTP first.");
       return;
     }
-    if (passkey.length < 16) {
-      // A good practice: ensure enough entropy for the key derivation
-      toast.error("Passkey must be at least 16 characters long.");
-      return;
-    }
+    // Removed passkey length validation as passkey is no longer part of DTO
+    // if (passkey.length < 16) {
+    //   toast.error("Passkey must be at least 16 characters long.");
+    //   return;
+    // }
 
     setRegistering(true);
     try {
       const res = await axiosInstance.post("/auth/register", {
         email: email,
-        userName: userName, // Map 'username' state to 'userName' DTO field
+        userName: userName,
         password: password,
-        passkey: passkey, // Include the passkey
-        role: role, // Include the selected role
+        // passkey: passkey, // Removed passkey from the payload
+        role: role,
         name: name,
       });
-      toast.success(res.data); // Backend sends "User registered successfully!"
+      toast.success(res.data);
       navigate("/login");
     } catch (err) {
-      // NEW: Improved error handling for validation messages from backend
       if (
         err.response &&
         err.response.status === 400 &&
         typeof err.response.data === "object"
       ) {
-        // Backend returns a map of validation errors (e.g., {"email": "Invalid email format"})
         const errors = err.response.data;
         Object.keys(errors).forEach((field) => {
           toast.error(`${field}: ${errors[field]}`);
         });
       } else {
-        // Handle other errors (e.g., OTP verification expired, user already exists)
         toast.error(err.response?.data || "Registration failed");
       }
     } finally {
@@ -187,8 +190,6 @@ export default function Register() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              // F3 (Issue) - Email Validation
-              // pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
               title="Please enter a valid email address (e.g., user@example.com)"
             />
             {sendingOtp ? (
@@ -207,15 +208,14 @@ export default function Register() {
         {step === 2 && (
           <form onSubmit={handleVerifyOtp} className="register-form">
             <input
-              type="text" // Keep as text, OTPs don't need to be masked
+              type="text"
               placeholder="Enter OTP"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
               required
-              // F3 (Issue) - OTP might need length validation, e.g., 6 digits
-              minlength="6" // Assuming OTP is 6 digits
-              maxlength="6" // Assuming OTP is 6 digits
-              pattern="\d{6}" // Ensures only 6 digits are entered
+              minlength="6"
+              maxlength="6"
+              pattern="\d{6}"
               title="Please enter the 6-digit OTP"
             />
             {verifyingOtp ? (
@@ -264,7 +264,8 @@ export default function Register() {
               // pattern="^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}$"
               // title="Password must be at least 8 characters, including at least one digit, one lowercase, one uppercase, and one special character."
             />
-            <div className="passkey-input-container">
+            {/* Removed the passkey input container */}
+            {/* <div className="passkey-input-container">
               <input
                 type={showPasskey ? "text" : "password"}
                 placeholder="Passkey (secret phrase for encryption) Minimum 16 Characters"
@@ -281,7 +282,7 @@ export default function Register() {
               >
                 {showPasskey ? "Hide" : "Show"}
               </button>
-            </div>
+            </div> */}
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}

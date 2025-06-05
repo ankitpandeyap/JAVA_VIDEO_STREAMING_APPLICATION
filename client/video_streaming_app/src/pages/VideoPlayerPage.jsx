@@ -1,80 +1,67 @@
-// src/pages/VideoPlayerPage.jsx - COMPLETE CODE FOR VIDEO PLAYBACK, DETAILS, AND ERROR HANDLING
-
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate for redirection
-import ReactPlayer from 'react-player'; // Your video player component
+import React, { useEffect, useState, useCallback } from 'react'; // <--- ADDED useCallback
+import { useParams, useNavigate } from 'react-router-dom';
+import ReactPlayer from 'react-player';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
-import LoadingSpinner from '../components/LoadingSpinner'; // Assuming you have a LoadingSpinner component
-import axiosInstance from '../api/axiosInstance'; // Your configured axios instance for API calls
-import { toast } from 'react-toastify'; // For user feedback
-import '../css/VideoPlayerPage.css'; // Your existing CSS for the video player page
+import LoadingSpinner from '../components/LoadingSpinner';
+import axiosInstance from '../api/axiosInstance';
+import { toast } from 'react-toastify';
+import '../css/VideoPlayerPage.css';
 
 const VideoPlayerPage = () => {
-    const { videoId } = useParams(); // Extract videoId from the URL parameters
-    const navigate = useNavigate(); // Hook to programmatically navigate users
-    const [video, setVideo] = useState(null); // State to store video details
-    const [loading, setLoading] = useState(true); // State to manage loading status
-    const [error, setError] = useState(''); // State to store error messages
+    const { videoId } = useParams();
+    const navigate = useNavigate();
+    const [video, setVideo] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-    // Function to fetch video details from the backend
-    const fetchVideoDetails = async () => {
-        setLoading(true); // Start loading state
-        setError('');     // Clear any previous errors
+    // Wrap fetchVideoDetails in useCallback to memoize it
+    // It depends on `videoId` and `Maps` (for the setTimeout redirect)
+    const fetchVideoDetails = useCallback(async () => {
+        setLoading(true);
+        setError('');
         try {
-            // Make an API call using axiosInstance to get video details by ID
-            // Assumes backend endpoint: GET /api/videos/{videoId}
             const response = await axiosInstance.get(`/videos/${videoId}`);
-            setVideo(response.data); // Update video state with fetched data
-            toast.success('Video loaded successfully!'); // Show success toast
+            setVideo(response.data);
+            toast.success('Video loaded successfully!');
 
             // After successfully fetching video details, initiate view increment
-            incrementVideoViews(videoId);
+            await axiosInstance.patch(`/videos/${videoId}/views`); // Using PATCH for incrementing views
+            console.log(`Views incremented for video ${videoId}`);
 
         } catch (err) {
             console.error('Failed to fetch video details:', err);
-            // Determine a user-friendly error message
             const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Failed to load video details. It might not exist or be unavailable.';
-            setError(errorMessage); // Set error state
-            toast.error(errorMessage); // Show error toast
+            setError(errorMessage);
+            toast.error(errorMessage);
 
-            // Redirect to the dashboard after a short delay so the user can read the message
             setTimeout(() => {
                 navigate('/dashboard');
-            }, 3000); // Redirect after 3 seconds
+            }, 3000);
         } finally {
-            setLoading(false); // End loading state
+            setLoading(false);
         }
-    };
+    }, [videoId, navigate]); // <--- Dependencies for useCallback
 
     // Function to increment video views (fire and forget, less critical error handling)
-    const incrementVideoViews = async (id) => {
-        try {
-            // Make an API call using axiosInstance to increment views
-            // Assumes backend endpoint: POST /api/videos/increment-views/{videoId}
-            await axiosInstance.post(`/videos/increment-views/${id}`);
-            console.log(`Views incremented for video ${id}`);
-        } catch (err) {
-            console.warn(`Failed to increment views for video ${id}:`, err);
-            // Use a warning toast for non-critical errors like view count not updating
-            toast.warn('Could not update view count.');
-        }
-    };
+    // Removed `incrementVideoViews` as a separate function if it's only called from `fetchVideoDetails`
+    // If you need it separately, you'd wrap it in useCallback too, and decide its dependencies.
+    // For now, I've embedded the logic directly into fetchVideoDetails as it seems more streamlined.
+    // If you need it as a standalone, let me know.
 
     // Handler for ReactPlayer errors (e.g., video file not found, network issues during playback)
     const handlePlayerError = (err) => {
         console.error('ReactPlayer error:', err);
         toast.error('Video playback error. Please try again.');
-        // You could add more sophisticated UI here, like an overlay over the player.
     };
 
     // useEffect hook to fetch video details when the component mounts or videoId changes
     useEffect(() => {
         if (videoId) { // Ensure videoId is available from URL
-            fetchVideoDetails();
+            fetchVideoDetails(); // Call the memoized function
         }
-    }, [videoId]); // Dependency array: re-run if videoId changes (e.g., navigating between videos)
+    }, [videoId, fetchVideoDetails]); // <--- Dependency array now includes fetchVideoDetails
 
     return (
         <div className="video-player-page-layout">
@@ -83,40 +70,32 @@ const VideoPlayerPage = () => {
                 <Sidebar />
                 <div className="video-content-area">
                     {loading ? (
-                        // Show loading spinner while fetching video details
                         <LoadingSpinner />
                     ) : error ? (
-                        // Show error message if fetching failed, with a redirect message
                         <div className="video-error-container">
                             <p className="video-error-message">{error}</p>
                             <p className="video-redirect-message">Redirecting to Dashboard...</p>
                         </div>
                     ) : video ? (
-                        // If video details are successfully loaded, display the player and details
                         <>
                             <div className="player-wrapper">
                                 <ReactPlayer
-                                    url={video.videoUrl} // The URL for the video stream
+                                    url={video.videoUrl}
                                     className='react-player'
-                                    playing={true} // Autoplay
-                                    controls={true} // Show default player controls
+                                    playing={true}
+                                    controls={true}
                                     width='100%'
                                     height='100%'
-                                    onError={handlePlayerError} // Handle playback errors
-                                    // Optional: Add a light prop with video.thumbnailUrl for a custom preview image
-                                    // light={video.thumbnailUrl}
+                                    onError={handlePlayerError}
                                 />
                             </div>
                             <div className="video-details">
                                 <h1 className="video-title">{video.title}</h1>
-                                {/* Display current view count */}
-                                <p className="video-views">{video.views} views</p> 
+                                <p className="video-views">{video.views} views</p>
                                 <p className="video-description">{video.description}</p>
-                                {/* Future Enhancements: Comments section, Like/Dislike buttons, Quality selection UI */}
                             </div>
                         </>
                     ) : (
-                        // Fallback if video is null and no specific error was caught (shouldn't typically happen)
                         <p className="placeholder-text">Video not found.</p>
                     )}
                 </div>

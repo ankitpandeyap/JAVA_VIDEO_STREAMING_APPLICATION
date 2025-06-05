@@ -1,3 +1,4 @@
+import React, { useContext } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 
@@ -7,12 +8,14 @@ import { useLocation } from "react-router-dom";
 import Footer from "./components/Footer";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import { AuthContext } from "./context/AuthContext";
 import MyVideosPage from "./pages/MyVideosPage";
 import ProfilePage from "./pages/ProfilePage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import LoadingSpinner from "./components/LoadingSpinner";
+import Dashboard from "./pages/Dashboard"; // <--- ADDED this import (assuming path)
+import VideoPlayerPage from "./pages/VideoPlayerPage";
 
 export default function App() {
   const location = useLocation();
