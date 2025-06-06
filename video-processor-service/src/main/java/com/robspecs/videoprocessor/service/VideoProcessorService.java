@@ -114,11 +114,6 @@ public class VideoProcessorService {
             // 2. Transcode all files to HLS (UNCONDITIONAL)
             Map<String, String> resolutionFilePaths = new HashMap<>();
 
-            // --- HIGHLIGHT START: Removed the 'if-else' block entirely ---
-            // Removed: if (request.getFileSize() > MEDIUM_VIDEO_SIZE_BYTES) { ... } else { ... }
-            // --- HIGHLIGHT END: Removed the 'if-else' block entirely ---
-
-            // --- HIGHLIGHT START: This block is now unconditional ---
             logger.info("Initiating multi-resolution HLS transcoding for video {} ({}MB) regardless of size.",
                     video.getVideoId(),
                     request.getFileSize() / (1024.0 * 1024.0));
@@ -132,15 +127,22 @@ public class VideoProcessorService {
             // Store only the master playlist path. The frontend player will use this single entry point.
             resolutionFilePaths.put("hls_master", hlsMasterPlaylistRelativePath);
 
-            video.setStatus(VideoStatus.READY); // Assume success after HLS transcoding
-            // --- HIGHLIGHT END: This block is now unconditional ---
-
+            // --- IMPORTANT CHANGE STARTS HERE ---
+            // Set status to READY and save to DB immediately after successful HLS transcoding
+            video.setStatus(VideoStatus.READY);
             video.setResolutionFilePaths(resolutionFilePaths); // Update the map of paths in the video entity
-            videoRepository.save(video); // Save final status, duration, and paths to DB
-
+            videoRepository.save(video); // Persist READY status, duration, and paths to DB
             logger.info("Video {} processed successfully. Status: {}", video.getVideoId(), video.getStatus());
-            emailService.sendProcessingSuccessEmail(uploadUserEmailOrUsername, originalVideoName);
 
+            // --- EMAIL SENDING AND RAW FILE DELETION ARE NOW IN SEPARATE TRY BLOCKS ---
+            try {
+                emailService.sendProcessingSuccessEmail(uploadUserEmailOrUsername, originalVideoName);
+            } catch (Exception emailEx) {
+                logger.error("Failed to send success email to {} for video {}: {}",
+                        uploadUserEmailOrUsername, originalVideoName, emailEx.getMessage(), emailEx);
+                // IMPORTANT: Do NOT change video status to FAILED here. The video is already READY.
+                // You might consider a retry mechanism or alert for the email itself.
+            }
 
             try {
                 if (originalRawFilePath != null && !originalRawFilePath.isEmpty()) {
@@ -154,21 +156,22 @@ public class VideoProcessorService {
             } catch (IOException e) {
                 logger.error("Failed to delete raw file for videoId {}. It might be in use or permissions are insufficient. Error: {}", video.getVideoId(), e.getMessage());
             }
-
+            // --- IMPORTANT CHANGE ENDS HERE ---
 
         } catch (VideoProcessingException e) {
             logger.error("Video processing failed for {}: {}", request.getVideoId(), e.getMessage(), e);
             video.setStatus(VideoStatus.FAILED);
             videoRepository.save(video); // Save FAILED status
+            // Send failure email only if video processing itself failed
             emailService.sendProcessingFailureEmail(uploadUserEmailOrUsername, originalVideoName, e.getMessage());
         } catch (Exception e) {
             logger.error("An unexpected error occurred during video processing for {}: {}", request.getVideoId(),
                     e.getMessage(), e);
             video.setStatus(VideoStatus.FAILED);
             videoRepository.save(video); // Save FAILED status
+            // Send failure email only if video processing itself failed
             emailService.sendProcessingFailureEmail(uploadUserEmailOrUsername, originalVideoName,
                     "An unexpected error occurred: " + e.getMessage());
         }
     }
-
 }

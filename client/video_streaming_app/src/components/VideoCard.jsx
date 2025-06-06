@@ -42,7 +42,7 @@ const VideoCard = ({ video, showActions, onEdit, onDelete }) => {
                         <div className="video-placeholder-box">
                             No Thumbnail Available
                         </div>
-                    )}  
+                    )}
                 </div>
                 <div className="video-info">
                     {/* TITLE: Use video.videoName from your backend DTO */}
