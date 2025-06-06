@@ -1,6 +1,7 @@
 package com.robspecs.streaming.config;
 
 import static org.springframework.security.config.Customizer.withDefaults;
+import com.robspecs.streaming.security.HlsTokenValidationFilter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,9 @@ import com.robspecs.streaming.security.JWTAuthenticationEntryPoint;
 import com.robspecs.streaming.security.JWTAuthenticationFilter;
 import com.robspecs.streaming.security.JWTRefreshFilter;
 import com.robspecs.streaming.security.JWTValidationFilter;
+import com.robspecs.streaming.service.FileStorageService;
 import com.robspecs.streaming.service.TokenBlacklistService;
+import com.robspecs.streaming.service.VideoService;
 import com.robspecs.streaming.utils.JWTUtils;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -50,8 +53,10 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(AuthenticationManager authenticationManager, HttpSecurity http,
-                                                   JWTUtils jwtUtils, CustomUserDetailsService customUserDetailsService, TokenBlacklistService tokenService) throws Exception {
-        logger.info("Configuring SecurityFilterChain."); // Use INFO for main chain configuration
+                                                     JWTUtils jwtUtils, CustomUserDetailsService customUserDetailsService,
+                                                     TokenBlacklistService tokenService) throws Exception {
+
+        logger.info("Configuring SecurityFilterChain.");
 
         // Instantiate your custom filters
         JWTAuthenticationFilter authFilter = new JWTAuthenticationFilter(authenticationManager, jwtUtils);
@@ -63,6 +68,10 @@ public class SecurityConfig {
 
         JWTRefreshFilter jwtRefreshFilter = new JWTRefreshFilter(authenticationManager, jwtUtils, customUserDetailsService, tokenService);
         logger.debug("JWTRefreshFilter instance created.");
+
+        // New: Instantiate HlsTokenValidationFilter
+        HlsTokenValidationFilter hlsFilter = new HlsTokenValidationFilter(jwtUtils); // <--- ADD THIS
+        logger.debug("HlsTokenValidationFilter instance created."); // <--- ADD THIS
 
         return http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -82,17 +91,22 @@ public class SecurityConfig {
                             "/api/auth/register",
                             "/api/auth/otp/verify",
                             "/api/auth/otp/request",
-                            "/api/auth/forgot-password", // <--- ADD THIS LINE
-                            "/api/auth/reset-password"
+                            "/api/auth/forgot-password",
+                            "/api/auth/reset-password",
+                            "/api/videos/stream/**" // Consolidated into one entry
                     ).permitAll();
-                    logger.debug("Public URLs configured: /api/auth/login, /api/auth/refresh, /api/auth/signup, /api/auth/register, /api/auth/otp/verify, /api/auth/otp/request are permitted.");
+                    // Consolidated log message for clarity and accuracy
+                    logger.debug("Public URLs configured: /api/auth/** endpoints and /api/videos/stream/** are permitted (HLS handled by HlsTokenValidationFilter).");
+
                     auth.anyRequest().authenticated();
                     logger.debug("All other requests require authentication.");
                 })
                 // Add custom filters to the chain
                 .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
+                // New: Add HlsTokenValidationFilter before the general JWTValidationFilter
+                .addFilterBefore(hlsFilter, JWTAuthenticationFilter.class) // <--- ADD THIS LINE (Before other JWT filters)
                 .addFilterAfter(validationFilter, JWTAuthenticationFilter.class)
-                .addFilterAfter(jwtRefreshFilter, JWTValidationFilter.class) // Corrected to use JWTValidationFilter.class
+                .addFilterAfter(jwtRefreshFilter, JWTValidationFilter.class)
                 .build();
     }
 

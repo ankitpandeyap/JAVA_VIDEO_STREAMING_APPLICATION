@@ -7,6 +7,7 @@ import com.robspecs.streaming.dto.VideoUpdateRequest;
 import com.robspecs.streaming.dto.VideoUploadDTO;
 import com.robspecs.streaming.entities.User;
 import com.robspecs.streaming.entities.Video;
+import com.robspecs.streaming.exceptions.FileNotFoundException;
 
 public interface VideoService {
 
@@ -51,4 +52,6 @@ public interface VideoService {
     * @throws java.io.IOException if an I/O error occurs during file deletion.
     */
    void deleteVideo(Long videoId, User currentUser); // <--- NEW METHOD SIGNATURE
+   
+   Video findVideoById(Long videoId) throws FileNotFoundException;
 }

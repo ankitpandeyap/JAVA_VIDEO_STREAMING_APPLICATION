@@ -1,33 +1,28 @@
-import React, {
-  useEffect,
-  useState,
-  useCallback,
-  useRef,
-  useContext,
-} from "react";
+// src/pages/VideoPlayerPage.jsx
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactPlayer from "react-player";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
-import { AuthContext } from "../context/AuthContext";
 import LoadingSpinner from "../components/LoadingSpinner";
 import axiosInstance from "../api/axiosInstance";
 import { toast } from "react-toastify";
-import "../css/VideoPlayerPage.css"; // Ensure this import is correct
+import "../css/VideoPlayerPage.css";
 
 const VideoPlayerPage = () => {
   const { videoId } = useParams();
   const navigate = useNavigate();
   const [video, setVideo] = useState(null);
+  const [hlsPlaybackUrl, setHlsPlaybackUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const hasIncrementedViewForVideoId = useRef({});
-  const { accessToken } = useContext(AuthContext); // Get accessToken from AuthContext
 
-  // Add the console.log here as a sanity check for accessToken availability
-  console.log("VideoPlayerPage - Current accessToken:", accessToken);
+  // State to control playing and player dimensions
+  const [isPlaying, setIsPlaying] = useState(false); // Initialized to false
+  const playerRef = useRef(null);
 
-  const fetchVideoDetails = useCallback(async () => {
+  const fetchVideoData = useCallback(async () => {
     setLoading(true);
     setError("");
     if (!videoId) {
@@ -39,15 +34,36 @@ const VideoPlayerPage = () => {
     }
 
     try {
-      const response = await axiosInstance.get(`/videos/${videoId}`);
-      setVideo(response.data);
+      const videoDetailsResponse = await axiosInstance.get(
+        `/videos/${videoId}`
+      );
+      setVideo(videoDetailsResponse.data);
+
+      const urlResponse = await axiosInstance.get(
+        `/videos/${videoId}/hls-stream-url`
+      );
+      const relativeUrlFromBackend = urlResponse.data;
+
+      if (relativeUrlFromBackend) {
+        const fullAbsoluteUrl = `http://localhost:8082${relativeUrlFromBackend}`;
+        setHlsPlaybackUrl(fullAbsoluteUrl);
+        console.log(
+          "Full HLS Playback URL (for ReactPlayer):",
+          fullAbsoluteUrl
+        );
+        // REMOVED: setIsPlaying(true); // Still removed for no autoplay
+      } else {
+        console.error("HLS stream URL is empty or null from backend.");
+        throw new Error("HLS stream URL not received from backend.");
+      }
+
       toast.success("Video loaded successfully!");
     } catch (err) {
-      console.error("Failed to fetch video details:", err);
+      console.error("Failed to load video or HLS stream URL:", err);
       const errorMessage =
         err.response?.data?.message ||
         err.response?.data?.error ||
-        "Failed to load video details. It might not exist or be unavailable.";
+        "Failed to load video. It might not exist, be unavailable, or you lack permission.";
       setError(errorMessage);
       toast.error(errorMessage);
 
@@ -67,8 +83,8 @@ const VideoPlayerPage = () => {
   };
 
   useEffect(() => {
-    fetchVideoDetails();
-  }, [fetchVideoDetails]);
+    fetchVideoData();
+  }, [fetchVideoData]);
 
   useEffect(() => {
     if (videoId && !hasIncrementedViewForVideoId.current[videoId]) {
@@ -84,24 +100,14 @@ const VideoPlayerPage = () => {
     }
   }, [videoId]);
 
-  // Construct the video URL for ReactPlayer
-  const videoPlaybackUrl =
-    videoId && video
-      ? `http://localhost:8082/api/videos/stream/${videoId}`
-      : "";
-
-  // Define headers for the stream
-  // Only include Authorization header if accessToken is truly available
-  const streamHeaders = accessToken && accessToken !== "null" && accessToken.length > 0
-    ? { 'Authorization': `Bearer ${accessToken}` }
-    : {};
+  const videoPlaybackUrl = hlsPlaybackUrl;
 
   return (
-    <div className="player-layout"> {/* Renamed class */}
+    <div className="player-layout">
       <Header />
-      <div className="player-main-content"> {/* Renamed class */}
+      <div className="player-main-content">
         <Sidebar />
-        <div className="player-content-area"> {/* Renamed class */}
+        <div className="player-content-area">
           {loading ? (
             <LoadingSpinner />
           ) : error ? (
@@ -111,73 +117,45 @@ const VideoPlayerPage = () => {
                 Redirecting to Dashboard...
               </p>
             </div>
-          ) : video ? (
-            // --- NEW WRAPPER HERE ---
+          ) : video && videoPlaybackUrl ? (
             <div className="video-player-container">
               <div className="player-wrapper">
-                {videoPlaybackUrl ? (
-                  <ReactPlayer
-                    url={videoPlaybackUrl}
-                    className="react-player"
-                    playing={true}
-                    controls={true}
-                    width="100%"
-                    height="100%"
-                    onError={handlePlayerError}
-                    config={{
-                      file: {
-                        attributes: {
-                          crossOrigin: "use-credentials",
-                        },
-                        httpHeaders: streamHeaders,
-                        hlsOptions: {
-                          xhrSetup: (xhr, url) => {
-                            console.log(`[HLS.js xhrSetup] Intercepting request for: ${url}`);
-                            console.log(`[HLS.js xhrSetup] Current accessToken: ${accessToken}`);
-
-                            if (accessToken && accessToken !== "null" && accessToken.length > 0) {
-                              xhr.setRequestHeader(
-                                "Authorization",
-                                `Bearer ${accessToken}`
-                              );
-                              console.log(
-                                `[HLS.js xhrSetup] Set Authorization header for: ${url.substring(
-                                  0,
-                                  Math.min(url.length, 100)
-                                )}...`
-                              );
-                            } else {
-                              console.warn(
-                                `[HLS.js xhrSetup] Skipping Authorization header for: ${url} (No token or token is null/empty).`
-                              );
-                            }
-                          },
-                          debug: true,
-                        },
+                <ReactPlayer
+                  ref={playerRef}
+                  url={videoPlaybackUrl}
+                  className="react-player"
+                  playing={isPlaying}
+                  controls={true}
+                  width="100%"
+                  height="100%"
+                  onError={handlePlayerError}
+                  onPlay={() => setIsPlaying(true)} // <-- ADDED: Update state when player starts playing
+                  onPause={() => setIsPlaying(false)} // <-- ADDED: Update state when player pauses
+                  config={{
+                    file: {
+                      attributes: {
+                        crossOrigin: "anonymous",
                       },
-                    }}
-                  />
-                ) : (
-                  <div className="video-error-container">
-                    <p className="video-error-message">
-                      Video source URL could not be generated.
-                    </p>
-                    <p>Check video ID and processing status.</p>
-                  </div>
-                )}
+                      hlsOptions: {
+                        debug: true,
+                      },
+                    },
+                  }}
+                />
               </div>
               <div className="video-details">
-                <h1 className="video-player-title">{video.videoName}</h1> {/* Changed class name */}
-                <p className="video-player-views">{video.views} views</p> {/* Changed class name */}
-                <p className="video-player-description">{video.description}</p> {/* Changed class name */}
-                <p className="video-player-channel"> {/* Changed class name */}
+                <h1 className="video-player-title">{video.videoName}</h1>
+                <p className="video-player-views">{video.views} views</p>
+                <p className="video-player-description">{video.description}</p>
+                <p className="video-player-channel">
                   Uploaded by: {video.uploadUsername}
                 </p>
               </div>
             </div>
-            // --- END NEW WRAPPER ---
           ) : (
-            <p className="placeholder-text">No video data available.</p>
+            <p className="placeholder-text">
+              No video data available or stream URL not ready.
+            </p>
           )}
         </div>
       </div>

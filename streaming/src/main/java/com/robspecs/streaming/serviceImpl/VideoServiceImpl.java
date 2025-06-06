@@ -308,4 +308,16 @@ public class VideoServiceImpl implements VideoService {
         videoRepository.delete(video);
         logger.info("Video entity with ID: {} deleted successfully from DB.", videoId);
     }
+    
+    
+    @Override
+    @Transactional
+    public Video findVideoById(Long videoId) throws FileNotFoundException {
+        logger.debug("Attempting to find video by ID: {}", videoId);
+        return videoRepository.findById(videoId)
+                .orElseThrow(() -> {
+                    logger.warn("Video not found with ID: {}", videoId);
+                    return new FileNotFoundException("Video not found with ID: " + videoId);
+                });
+    }
 }
