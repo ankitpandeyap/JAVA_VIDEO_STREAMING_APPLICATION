@@ -7,11 +7,13 @@ import com.robspecs.streaming.entities.User;
 import com.robspecs.streaming.entities.Video;
 import com.robspecs.streaming.enums.VideoStatus;
 import com.robspecs.streaming.exceptions.FileNotFoundException;
+import com.robspecs.streaming.repository.VideosRepository;
 import com.robspecs.streaming.service.FileStorageService;
 import com.robspecs.streaming.service.VideoService;
 import jakarta.validation.Valid; // <--- NEW IMPORT (if you plan to use @Valid for DTOs)
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
@@ -38,6 +40,9 @@ public class VideoController {
 	private final VideoService videoService;
 	private final FileStorageService fileStorageService;
 
+	@Autowired
+	private  VideosRepository videoRepo; 
+	
 	// Define file size thresholds in bytes for clarity
 	private static final long SMALL_VIDEO_THRESHOLD_BYTES = 10 * 1024 * 1024; // 10 MB
 	private static final long MEDIUM_VIDEO_THRESHOLD_BYTES = 50 * 1024 * 1024; // 50 MB
@@ -153,14 +158,19 @@ public class VideoController {
 
 	@GetMapping("/stream/{videoId}")
 	public ResponseEntity<Resource> streamVideo(@PathVariable Long videoId,
-			@RequestParam(required = false) String fileName, // Optional for HLS segments/other resolutions
-			@RequestHeader HttpHeaders headers, @AuthenticationPrincipal User currentUser) {
+	                                            @RequestParam(required = false) String fileName,
+	                                            @RequestHeader HttpHeaders headers) {
 
-		logger.info("Stream request for videoId: {} with fileName: {} by user: {}", videoId, fileName,
-				currentUser.getUsername());
+	    // REMOVE THIS LINE: You don't have an authenticated user for public streams
+	    // User currentUser =videoRepo.findById(videoId).get().getUploadUser();
 
+	    // The log message needs to be adjusted since there's no authenticated user
+	    logger.info("Stream request for videoId: {} with fileName: {}. This is a public stream.", videoId, fileName);
 		try {
-			Video video = videoService.getActualVideoEntity(videoId, currentUser);
+			
+			Video video = videoService.getVideoForPublicStream(videoId); 
+
+			
 
 			// This status check remains as is, checking for UPLOADED or PROCESSING
 			if (video.getStatus() == VideoStatus.UPLOADED || video.getStatus() == VideoStatus.PROCESSING) {
@@ -274,8 +284,8 @@ public class VideoController {
 			logger.warn("Stream file not found for videoId {} / fileName {}: {}", videoId, fileName, e.getMessage());
 			return ResponseEntity.notFound().build();
 		} catch (SecurityException e) {
-			logger.warn("Access denied for streaming videoId {} to user {}: {}", videoId, currentUser.getUsername(),
-					e.getMessage());
+//			logger.warn("Access denied for streaming videoId {} to user {}: {}", videoId, currentUser.getUsername(),
+//					e.getMessage());
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 		} catch (IOException e) {
 			logger.error("IO error streaming videoId {} / fileName {}: {}", videoId, fileName, e.getMessage(), e);

@@ -51,4 +51,7 @@ public interface VideoService {
     * @throws java.io.IOException if an I/O error occurs during file deletion.
     */
    void deleteVideo(Long videoId, User currentUser); // <--- NEW METHOD SIGNATURE
+   
+   
+   Video getVideoForPublicStream(Long videoId); 
 }

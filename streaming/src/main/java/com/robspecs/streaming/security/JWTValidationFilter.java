@@ -47,7 +47,7 @@ public class JWTValidationFilter extends OncePerRequestFilter {
 
 	private static final List<String> PUBLIC_URLS = List.of("/api/auth/login", "/api/auth/refresh", "/api/auth/signup",
 			"/api/auth/register", "/api/auth/otp/verify", "/api/auth/otp/request", "/api/auth/forgot-password", // <--- ADD THIS LINE
-            "/api/auth/reset-password");
+            "/api/auth/reset-password","/api/videos/stream/**");
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -56,6 +56,25 @@ public class JWTValidationFilter extends OncePerRequestFilter {
 
 		String path = request.getRequestURI();
 
+		 // Check if the current request path matches any of the public URLs,
+        // specifically handling wildcard patterns like "/**"
+        boolean isPublicUrl = PUBLIC_URLS.stream().anyMatch(publicUrlPattern -> {
+            if (publicUrlPattern.endsWith("/**")) {
+                // If the public URL pattern ends with '/**', check if the request path starts with the base part
+                String basePublicUrl = publicUrlPattern.substring(0, publicUrlPattern.length() - 3); // Remove "/**"
+                return path.startsWith(basePublicUrl);
+            }
+            // For exact matches or other simple patterns, use equals
+            return path.equals(publicUrlPattern);
+        });
+
+        if (isPublicUrl) {
+            logger.info("Request path {} is public. Skipping JWT validation.", path);
+            filterChain.doFilter(request, response);
+            return;
+        }
+		
+		
 		if (PUBLIC_URLS.contains(path)) {
 			logger.info("Request path {} is public. Skipping JWT validation.", path);
 			filterChain.doFilter(request, response);

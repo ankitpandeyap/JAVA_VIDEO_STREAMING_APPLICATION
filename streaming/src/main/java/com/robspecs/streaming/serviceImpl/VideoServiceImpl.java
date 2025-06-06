@@ -301,4 +301,16 @@ public class VideoServiceImpl implements VideoService {
         videoRepository.delete(video);
         logger.info("Video entity with ID: {} deleted successfully from DB.", videoId);
     }
+
+    @Override
+    @Transactional // Mark as read-only since it's just fetching
+    public Video getVideoForPublicStream(Long videoId) {
+        logger.debug("Fetching video entity for public stream with ID: {}", videoId);
+        // This method does NOT perform user-based authorization
+        return videoRepository.findById(videoId).orElseThrow(() -> {
+            logger.warn("Video entity not found with ID: {}", videoId);
+            return new FileNotFoundException("Video entity not found with ID: " + videoId);
+        });
+    }
+
 }

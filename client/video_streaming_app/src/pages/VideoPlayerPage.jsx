@@ -59,12 +59,22 @@ const VideoPlayerPage = () => {
     }
   }, [videoId, navigate]);
 
-  const handlePlayerError = (err) => {
-    console.error("ReactPlayer error:", err);
-    toast.error(
-      "Video playback error. The video might not be available or is corrupted."
-    );
-  };
+ const handlePlayerError = (err) => {
+  console.error("ReactPlayer raw error event:", err); // Log the full event object
+  if (err && err.target && err.target.error) {
+    // This provides HTML5 MediaError codes
+    console.error("ReactPlayer HTML5 error code:", err.target.error.code);
+    console.error("ReactPlayer HTML5 error message:", err.target.error.message);
+    // Possible HTML5 error codes:
+    // MEDIA_ERR_ABORTED (1): fetching process aborted by user
+    // MEDIA_ERR_NETWORK (2): network error, download failed
+    // MEDIA_ERR_DECODE (3): decoding error
+    // MEDIA_ERR_SRC_NOT_SUPPORTED (4): media source not supported
+  }
+  toast.error(
+    "Video playback error. The video might not be available or is corrupted."
+  );
+};  
 
   useEffect(() => {
     fetchVideoDetails();
@@ -127,9 +137,9 @@ const VideoPlayerPage = () => {
                     config={{
                       file: {
                         attributes: {
-                          crossOrigin: "use-credentials",
+                        crossOrigin: "anonymous",
                         },
-                        httpHeaders: streamHeaders,
+                       // httpHeaders: streamHeaders,
                         hlsOptions: {
                           xhrSetup: (xhr, url) => {
                             console.log(`[HLS.js xhrSetup] Intercepting request for: ${url}`);

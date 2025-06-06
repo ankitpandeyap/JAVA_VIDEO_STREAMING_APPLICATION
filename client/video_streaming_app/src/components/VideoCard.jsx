@@ -53,7 +53,7 @@ const VideoCard = ({ video, showActions, onEdit, onDelete }) => {
                 <div className="video-actions">
                     {/* Pass video.videoId to onEdit and onDelete handlers */}
                    <button onClick={() => onEdit(video)} className="btn-edit">Edit</button>
-+                    <button onClick={() => onDelete(video)} className="btn-delete">Delete</button>
+                    <button onClick={() => onDelete(video)} className="btn-delete">Delete</button>
                 </div>
             )}
         </div>
