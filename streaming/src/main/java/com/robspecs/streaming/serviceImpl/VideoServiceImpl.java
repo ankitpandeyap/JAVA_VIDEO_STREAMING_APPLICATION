@@ -293,12 +293,15 @@ public class VideoServiceImpl implements VideoService {
                 fileStorageService.deleteFile(video.getOriginalFilePath());
                 logger.info("Deleted original file: {} for video ID: {}", video.getOriginalFilePath(), videoId);
             }
-
-            String processedVideoDirectoryPath = String.format("%s/videos/processed/%d/hls",
-                                                                currentUser.getUserId(),
-                                                                videoId);
-            fileStorageService.deleteDirectory(processedVideoDirectoryPath);
-            logger.info("Deleted processed video directory: {} for video ID: {}", processedVideoDirectoryPath, videoId);
+//
+//            String processedVideoDirectoryPath = String.format("%s/videos/processed/%d/hls",
+//                                                                currentUser.getUserId(),
+//                                                                videoId);
+//            fileStorageService.deleteDirectory(processedVideoDirectoryPath);
+			String videoIdProcessedBaseDirectory = String.format("%s/videos/processed/%d", currentUser.getUserId(),
+					videoId);
+			fileStorageService.deleteDirectory(videoIdProcessedBaseDirectory);
+            logger.info("Deleted processed video directory: {} for video ID: {}", videoIdProcessedBaseDirectory, videoId);
 
         } catch (IOException e) {
             logger.error("Failed to delete video files from storage for video ID {}: {}", videoId, e.getMessage(), e);

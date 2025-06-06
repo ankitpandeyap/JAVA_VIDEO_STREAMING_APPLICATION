@@ -9,7 +9,7 @@ public class VideoDetailsDTO {
 	 private String videoName;
 	    private String description;
 	    private Long uploadUserId;
-	    private String uploadUserName; // Or email, depending on what you expose
+	    private String uploadUsername; // Or email, depending on what you expose
 	    private VideoStatus status;
 	    private Long durationMillis;
 	    private Long fileSize; // Added based on your VideoServiceImpl constructor
@@ -34,7 +34,7 @@ public class VideoDetailsDTO {
         this.status = VideoStatus.valueOf(status); // Convert String back to Enum
         this.durationMillis = durationMillis;
         this.views = views;
-        this.uploadUserName = uploadUserName;
+        this.uploadUsername = uploadUserName;
         this.resolutionFilePaths = resolutionFilePaths;
         this.thumbnailData = thumbnailData; // Initialize thumbnailData
 	}
@@ -117,12 +117,12 @@ public class VideoDetailsDTO {
 			this.uploadUserId = uploadUserId;
 		}
 
-		public String getUploadUserName() {
-			return uploadUserName;
+		public String getUploadUsername() { // Changed getter name
+		    return uploadUsername;
 		}
 
-		public void setUploadUserName(String uploadUserName) {
-			this.uploadUserName = uploadUserName;
+		public void setUploadUsername(String uploadUsername) { // Changed setter name
+		    this.uploadUsername = uploadUsername;
 		}
 
 		public VideoStatus getStatus() {
