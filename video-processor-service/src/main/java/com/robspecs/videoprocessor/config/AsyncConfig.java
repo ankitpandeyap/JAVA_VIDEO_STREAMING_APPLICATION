@@ -36,4 +36,17 @@ public class AsyncConfig {
         return executor;
     }
     */
+	 
+	  @Bean(name = "videoProcessingExecutor") // Give it a specific name
+	    public Executor videoProcessingExecutor() {
+	        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+	        executor.setCorePoolSize(2); // Number of core threads (e.g., number of CPU cores)
+	        executor.setMaxPoolSize(5);  // Maximum number of threads in the pool
+	        executor.setQueueCapacity(500); // Capacity of the queue for pending tasks
+	        executor.setThreadNamePrefix("VideoProcessor-"); // Prefix for thread names
+	        executor.initialize();
+	        return executor;
+	    }
+	 
+	 
 }

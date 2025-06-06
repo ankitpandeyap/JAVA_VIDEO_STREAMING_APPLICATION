@@ -15,7 +15,7 @@ import jakarta.persistence.LockModeType;
 @Repository
 public interface VideosRepository extends JpaRepository<Video, Long> {
 
-	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Lock(LockModeType.NONE)
 	@Override // It's good practice to mark overridden methods explicitly
 	Optional<Video> findById(Long id);
 
