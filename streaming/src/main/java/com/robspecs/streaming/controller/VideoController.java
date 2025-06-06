@@ -352,14 +352,14 @@ public class VideoController {
             // Perform explicit authorization check here since findVideoById just gets the entity.
             // If getActualVideoEntity from VideoService already handles this based on @AuthenticationPrincipal,
             // then this can be simplified. Assuming findVideoById is purely retrieval.
-            if (!video.getUploadUser().getUserId().equals(currentUser.getUserId()) &&
-                currentUser.getRole() != com.robspecs.streaming.enums.Roles.ADMIN) {
-                logger.warn("User {} attempted to generate HLS URL for video {} which they do not own and are not admin.",
-                        currentUser.getUsername(), videoId);
-                throw new SecurityException("Access denied to video: " + videoId);
-            }
-
-            logger.debug("User {} authorized to access video {}.", currentUser.getUsername(), videoId);
+//            if (!video.getUploadUser().getUserId().equals(currentUser.getUserId()) &&
+//                currentUser.getRole() != com.robspecs.streaming.enums.Roles.ADMIN) {
+//                logger.warn("User {} attempted to generate HLS URL for video {} which they do not own and are not admin.",
+//                        currentUser.getUsername(), videoId);
+//                throw new SecurityException("Access denied to video: " + videoId);
+//            }
+//
+//            logger.debug("User {} authorized to access video {}.", currentUser.getUsername(), videoId);
 
             // 2. Generate a short-lived HLS specific JWT token
             long hlsTokenExpiryMinutes = 15; // Set a short expiry for HLS tokens
