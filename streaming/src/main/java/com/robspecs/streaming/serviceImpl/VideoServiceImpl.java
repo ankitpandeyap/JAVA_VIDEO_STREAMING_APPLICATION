@@ -208,11 +208,18 @@ public class VideoServiceImpl implements VideoService {
 	 * centralize the mapping logic.
 	 */
 	private VideoDetailsDTO convertToVideoDetailsDTO(Video video) {
-		return new VideoDetailsDTO(video.getVideoId(), video.getVideoName(), video.getDescription(),
-				video.getFileSize(), video.getStatus().name(), // Convert enum to String
-				video.getDurationMillis(), video.getViews(), video.getUploadUser().getUsername(), // Get username
-																									// directly
-				video.getResolutionFilePaths());
+		return new VideoDetailsDTO(
+				video.getVideoId(), // Assuming getId() or videoId is used consistently
+				video.getVideoName(),
+				video.getDescription(),
+				video.getFileSize(), // Pass fileSize
+				video.getStatus().name(), // Convert enum to String
+				video.getDurationMillis(),
+				video.getViews(),
+				video.getUploadUser().getUsername(), // Get username directly
+				video.getResolutionFilePaths(),
+				video.getThumbnailData() // --- HIGHLIGHT: Pass the thumbnailData ---
+		);
 	}
 
 	@Override

@@ -152,140 +152,92 @@ public class VideoController {
 
 
 	@GetMapping("/stream/{videoId}")
-	public ResponseEntity<Resource> streamVideo(@PathVariable Long videoId,
-			@RequestParam(required = false) String fileName, // Optional for HLS segments/other resolutions
-			@RequestHeader HttpHeaders headers, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<Resource> streamVideo(@PathVariable Long videoId,
+                                                @RequestParam(required = false) String fileName, // Optional: for specific HLS segments/sub-playlists
+                                                @RequestHeader HttpHeaders headers, // Headers might still be sent by clients, but range logic is gone
+                                                @AuthenticationPrincipal User currentUser) {
 
-		logger.info("Stream request for videoId: {} with fileName: {} by user: {}", videoId, fileName,
-				currentUser.getUsername());
+        logger.info("Stream request for videoId: {} with fileName: {} by user: {}", videoId, fileName,
+                currentUser.getUsername());
 
-		try {
-			Video video = videoService.getActualVideoEntity(videoId, currentUser);
+        try {
+            Video video = videoService.getActualVideoEntity(videoId, currentUser);
 
-			// This status check remains as is, checking for UPLOADED or PROCESSING
-			if (video.getStatus() == VideoStatus.UPLOADED || video.getStatus() == VideoStatus.PROCESSING) {
-				logger.warn("Video {} is not ready for streaming. Current status: {}", videoId, video.getStatus());
-				return ResponseEntity.status(HttpStatus.LOCKED).body(null);
-			}
+            // Ensure video is in a streamable status (COMPLETED)
+            if (video.getStatus() != VideoStatus.READY) { // Only allow streaming if COMPLETED
+                logger.warn("Video {} is not ready for streaming. Current status: {}", videoId, video.getStatus());
+                return ResponseEntity.status(HttpStatus.LOCKED).body(null); // 423 Locked
+            }
 
-			String relativeFilePathToServe;
-			MediaType contentType;
-			long actualFileSize; // This will still initially be video.getFileSize() (original size)
+            String relativeFilePathToServe;
+            MediaType contentType;
+            long fileSize; // Size of the specific file being served (master playlist, sub-playlist, or segment)
 
-			if (fileName != null && !fileName.isEmpty()) {
-				String hlsBasePath = video.getResolutionFilePaths().get("hls_base");
-				if (hlsBasePath == null) {
-					logger.error("HLS base path not found for videoId: {}. Cannot serve specific HLS file: {}", videoId,
-							fileName);
-					return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-				}
-				relativeFilePathToServe = hlsBasePath + "/" + fileName;
+            // Determine the file to serve based on 'fileName' parameter
+            if (fileName != null && !fileName.isEmpty()) {
+                // Client is requesting a specific HLS file (e.g., 360p.m3u8, segment001.ts)
+                String hlsBasePath = video.getResolutionFilePaths().get("hls_base");
+                if (hlsBasePath == null) {
+                    logger.error("HLS base path not found for videoId: {}. Cannot serve specific HLS file: {}", videoId,
+                            fileName);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                }
+                relativeFilePathToServe = hlsBasePath + "/" + fileName;
 
-				if (fileName.endsWith(".m3u8")) {
-					contentType = MediaType.parseMediaType("application/x-mpegURL");
-				} else if (fileName.endsWith(".ts")) {
-					contentType = MediaType.parseMediaType("video/MP2T");
-				} else if (fileName.endsWith(".mp4")) {
-					contentType = MediaType.parseMediaType("video/mp4");
-				} else {
-					contentType = MediaType.APPLICATION_OCTET_STREAM;
-				}
-
-				Path actualPath = fileStorageService.getFilePath(relativeFilePathToServe);
-				actualFileSize = Files.size(actualPath); // This actualFileSize is specific to the HLS segment/playlist
-				logger.debug("Serving specific file: {} (size: {}) for videoId: {}", relativeFilePathToServe,
-						actualFileSize, videoId);
-
-			} else {
-				// **HIGHLIGHT START - THE ONLY MODIFIED LOGIC BLOCK**
-                // Original logic here was using video.getOriginalFilePath(),
-                // and my last suggestion used "processed_mp4" or "hls_master".
-                // Based on your latest info, the processed file is stored under the key "original".
-
-                String primaryProcessedPath = video.getResolutionFilePaths().get("original"); // <-- CHANGED THIS LINE: Now looking for key "original"
-                String hlsMasterPlaylistPath = video.getResolutionFilePaths().get("hls_master"); // Keep this as a fallback for HLS
-
-                if (primaryProcessedPath != null) { // If "original" key holds the processed path
-                    relativeFilePathToServe = primaryProcessedPath;
-                    // Infer content type based on the file extension (assuming .mp4 if it's the main processed file)
-                    if (primaryProcessedPath.toLowerCase().endsWith(".mp4")) {
-                        contentType = MediaType.parseMediaType("video/mp4");
-                    } else if (primaryProcessedPath.toLowerCase().endsWith(".m3u8")) {
-                        contentType = MediaType.parseMediaType("application/x-mpegURL");
-                    } else {
-                        contentType = MediaType.APPLICATION_OCTET_STREAM; // Default if extension is unknown
-                    }
-                    logger.info("Serving primary processed video (from 'original' key) for videoId: {}", videoId);
-                } else if (hlsMasterPlaylistPath != null) {
-                    relativeFilePathToServe = hlsMasterPlaylistPath;
-                    contentType = MediaType.parseMediaType("application/x-mpegURL");
-                    logger.info("Serving HLS master playlist for videoId: {}", videoId);
+                if (fileName.endsWith(".m3u8")) {
+                    contentType = MediaType.parseMediaType("application/x-mpegURL"); // HLS playlist
+                } else if (fileName.endsWith(".ts")) {
+                    contentType = MediaType.parseMediaType("video/MP2T"); // HLS segment
                 } else {
-                    // Fallback if neither primaryProcessedPath nor hls_master is available
-                    logger.error("No streamable processed video path (original or hls_master) found for videoId: {}", videoId); // Log message updated
+                    // Fallback for other potential files, though for HLS, these are primary types
+                    logger.warn("Unexpected file extension for HLS stream: {}", fileName);
+                    contentType = MediaType.APPLICATION_OCTET_STREAM;
+                }
+
+                logger.debug("Serving specific HLS file: {} for videoId: {}", relativeFilePathToServe, videoId);
+
+            } else {
+                // Client is requesting the primary stream, which should always be the HLS master playlist
+                String hlsMasterPlaylistPath = video.getResolutionFilePaths().get("hls_master");
+                if (hlsMasterPlaylistPath == null) {
+                    logger.error("HLS master playlist path not found for videoId: {}. Video might not be processed for HLS.", videoId);
                     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
                 }
+                relativeFilePathToServe = hlsMasterPlaylistPath;
+                contentType = MediaType.parseMediaType("application/x-mpegURL"); // Always application/x-mpegURL for master playlist
+                logger.info("Serving HLS master playlist for videoId: {}", videoId);
+            }
 
-                // After determining `relativeFilePathToServe` for the processed file,
-                // we need to get its actual size for the `Content-Length` headers.
-                Path finalProcessedPath = fileStorageService.getFilePath(relativeFilePathToServe);
-                actualFileSize = Files.size(finalProcessedPath); // <-- Now gets the size of the PROCESSED file
-                logger.debug("Determined processed video size: {} for videoId: {}", actualFileSize, videoId);
+            // Get the actual file path and its size for the specific file being served
+            Path actualPath = fileStorageService.getFilePath(relativeFilePathToServe);
+            fileSize = Files.size(actualPath);
+            Resource resource = fileStorageService.loadFileAsResource(relativeFilePathToServe);
 
-                // The 'small' video specific return also needs to use the processed path and size
-                if (actualFileSize < SMALL_VIDEO_THRESHOLD_BYTES) {
-                    logger.info("Serving full processed video (small, {} bytes) for videoId: {}", actualFileSize, videoId);
-                    return ResponseEntity.ok()
-                            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + video.getVideoName() + ".mp4\"")
-                            .contentType(contentType).contentLength(actualFileSize)
-                            .body(fileStorageService.loadFileAsResource(relativeFilePathToServe));
-                }
-				// **HIGHLIGHT END**
-			}
+            // For HLS, we typically don't implement byte range requests at the server level for segments/playlists.
+            // The client (HLS.js, native players) handles segment fetching.
+            // We just serve the file content with appropriate headers.
+            return ResponseEntity.ok()
+                    .contentType(contentType)
+                    .contentLength(fileSize) // Content-Length of the current file (playlist or segment)
+                    .cacheControl(CacheControl.maxAge(1, TimeUnit.HOURS).noTransform().mustRevalidate()) // Cache HLS content
+                    .body(resource);
 
-            // This part of the code remains unchanged.
-            // It will now correctly use `relativeFilePathToServe` (which points to the processed file)
-            // and `actualFileSize` (which is the size of the processed file).
-			Resource resource = fileStorageService.loadFileAsResource(relativeFilePathToServe);
-
-			List<HttpRange> ranges = headers.getRange();
-
-			if (ranges.isEmpty()
-					|| actualFileSize < MEDIUM_VIDEO_THRESHOLD_BYTES && actualFileSize > SMALL_VIDEO_THRESHOLD_BYTES) {
-				return ResponseEntity.ok().contentType(contentType).contentLength(actualFileSize).body(resource);
-			}
-
-			HttpRange range = ranges.get(0);
-			long start = range.getRangeStart(actualFileSize);
-			long end = range.getRangeEnd(actualFileSize);
-			long rangeLength = end - start + 1;
-
-			logger.debug("Serving byte range {}-{} (length: {}) for file: {}", start, end, rangeLength,
-					relativeFilePathToServe);
-
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
-					.header(HttpHeaders.CONTENT_TYPE, contentType.toString()).header(HttpHeaders.ACCEPT_RANGES, "bytes")
-					.header(HttpHeaders.CONTENT_LENGTH, String.valueOf(rangeLength))
-					.header(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + actualFileSize)
-					.cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).noTransform().mustRevalidate())
-					.body(fileStorageService.loadFileAsResource(relativeFilePathToServe));
-
-		} catch (FileNotFoundException e) {
-			logger.warn("Stream file not found for videoId {} / fileName {}: {}", videoId, fileName, e.getMessage());
-			return ResponseEntity.notFound().build();
-		} catch (SecurityException e) {
-			logger.warn("Access denied for streaming videoId {} to user {}: {}", videoId, currentUser.getUsername(),
-					e.getMessage());
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-		} catch (IOException e) {
-			logger.error("IO error streaming videoId {} / fileName {}: {}", videoId, fileName, e.getMessage(), e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		} catch (Exception e) {
-			logger.error("An unexpected error occurred during streaming videoId {} / fileName {}: {}", videoId,
-					fileName, e.getMessage(), e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
-	}
+        } catch (FileNotFoundException e) {
+            logger.warn("Stream file not found for videoId {} / fileName {}: {}", videoId, fileName, e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (SecurityException e) {
+            logger.warn("Access denied for streaming videoId {} to user {}: {}", videoId, currentUser.getUsername(),
+                    e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (IOException e) {
+            logger.error("IO error streaming videoId {} / fileName {}: {}", videoId, fileName, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        } catch (Exception e) {
+            logger.error("An unexpected error occurred during streaming videoId {} / fileName {}: {}", videoId,
+                    fileName, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 	
 	 @GetMapping("/my-videos") 
 	    public ResponseEntity<List<VideoDetailsDTO>> getMyVideos(@AuthenticationPrincipal User currentUser) {

@@ -6,6 +6,8 @@ import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Async;
+
 
 @Service
 
@@ -20,6 +22,7 @@ public class EmailService {
 		this.mailSender = mailSender;
 	}
 
+	@Async // This tells Spring to execute this method in a separate thread from the taskExecutor defined in AsyncConfig
 	public void sendProcessingSuccessEmail(String toEmail, String videoName) {
 		SimpleMailMessage message = new SimpleMailMessage();
 		message.setFrom("noreply@robspecs-streaming.com"); // Your sender email
@@ -37,6 +40,7 @@ public class EmailService {
 		}
 	}
 
+	@Async // This tells Spring to execute this method in a separate thread from the taskExecutor defined in AsyncConfig
 	public void sendProcessingFailureEmail(String toEmail, String videoName, String errorMessage) {
 		SimpleMailMessage message = new SimpleMailMessage();
 		message.setFrom("noreply@robspecs-streaming.com"); // Your sender email

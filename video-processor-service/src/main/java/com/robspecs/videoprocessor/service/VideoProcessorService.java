@@ -30,12 +30,12 @@ public class VideoProcessorService {
     private final FFmpegService ffmpegService;
     private final EmailService emailService;
 
-    // Define video size thresholds (in bytes)
-    private static final long SMALL_VIDEO_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
-    private static final long MEDIUM_VIDEO_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
-
+  
+    // private static final long SMALL_VIDEO_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+    // private static final long MEDIUM_VIDEO_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
+  
     public VideoProcessorService(VideosRepository videoRepository, FileStorageService fileStorageService,
-            FFmpegService ffmpegService, EmailService emailService) {
+                                 FFmpegService ffmpegService, EmailService emailService) {
         this.videoRepository = videoRepository;
         this.fileStorageService = fileStorageService;
         this.ffmpegService = ffmpegService;
@@ -85,46 +85,55 @@ public class VideoProcessorService {
             video.setDurationMillis(durationMillis);
             logger.info("Video {} duration set to {} ms.", request.getVideoId(), durationMillis);
 
-            // 2. Conditional Processing Logic based on file size
+            
+            try {
+                // Determine thumbnail capture timestamp: 2 seconds, or half the video duration if shorter.
+                // Ensures a frame is taken from within the video even if it's very short.
+                long captureTimestampMillis = (durationMillis > 0) ? Math.min(2000, durationMillis / 2) : 0;
+
+                // Desired thumbnail dimensions (e.g., standard 16:9 aspect ratio)
+                int thumbnailWidth = 640;
+                int thumbnailHeight = 360; 
+
+                byte[] thumbnailBytes = ffmpegService.generateThumbnail(
+                    originalVideoAbsolutePath,
+                    captureTimestampMillis, 
+                    thumbnailWidth,
+                    thumbnailHeight
+                );
+                video.setThumbnailData(thumbnailBytes);
+                logger.info("Thumbnail generated and set for videoId: {}", video.getVideoId());
+            } catch (VideoProcessingException e) {
+                logger.error("Failed to generate thumbnail for video {}: {}", request.getVideoId(), e.getMessage());
+                // Don't fail the entire video processing for a thumbnail error, just log and continue
+                video.setThumbnailData(null); // Ensure no corrupted data is saved if error
+            } catch (Exception e) { // Catch any other unexpected errors during thumbnail generation
+                logger.error("An unexpected error occurred during thumbnail generation for video {}: {}", request.getVideoId(), e.getMessage(), e);
+                video.setThumbnailData(null);
+            }            
+            // 2. Transcode all files to HLS (UNCONDITIONAL)
             Map<String, String> resolutionFilePaths = new HashMap<>();
 
-            // *** CRITICAL CHANGE HERE ***
-            if (request.getFileSize() > MEDIUM_VIDEO_SIZE_BYTES) { // Only HLS transcode if > 50 MB
-                logger.info("Video {} ({}MB) is large (> {}MB), initiating multi-resolution HLS transcoding.",
-                        video.getVideoId(),
-                        request.getFileSize() / (1024.0 * 1024.0),
-                        MEDIUM_VIDEO_SIZE_BYTES / (1024.0 * 1024.0));
+            // --- HIGHLIGHT START: Removed the 'if-else' block entirely ---
+            // Removed: if (request.getFileSize() > MEDIUM_VIDEO_SIZE_BYTES) { ... } else { ... }
+            // --- HIGHLIGHT END: Removed the 'if-else' block entirely ---
 
-                String hlsMasterPlaylistRelativePath = ffmpegService.transcodeToHLS(
-                        originalVideoAbsolutePath,
-                        video.getVideoId(),
-                        request.getUploadUserId()
-                );
+            // --- HIGHLIGHT START: This block is now unconditional ---
+            logger.info("Initiating multi-resolution HLS transcoding for video {} ({}MB) regardless of size.",
+                    video.getVideoId(),
+                    request.getFileSize() / (1024.0 * 1024.0));
 
-                // Store only the master playlist path. The frontend player will use this single entry point.
-                resolutionFilePaths.put("hls_master", hlsMasterPlaylistRelativePath);
+            String hlsMasterPlaylistRelativePath = ffmpegService.transcodeToHLS(
+                    originalVideoAbsolutePath,
+                    video.getVideoId(),
+                    request.getUploadUserId()
+            );
 
-                video.setStatus(VideoStatus.READY); // Assume success after HLS transcoding
+            // Store only the master playlist path. The frontend player will use this single entry point.
+            resolutionFilePaths.put("hls_master", hlsMasterPlaylistRelativePath);
 
-            } else { // This block handles SMALL (<=10MB) and MEDIUM (10MB to 50MB) videos
-                logger.info("Video {} ({}MB) is small or medium (<= {}MB). Copying to processed folder without HLS transcoding.",
-                        video.getVideoId(),
-                        request.getFileSize() / (1024.0 * 1024.0),
-                        MEDIUM_VIDEO_SIZE_BYTES / (1024.0 * 1024.0));
-
-                String fileName = originalVideoAbsolutePath.getFileName().toString();
-                Path targetProcessedFilePath = processedVideoDirectory.resolve(fileName);
-
-                // Copy the raw file to the processed directory
-                fileStorageService.copyFile(originalVideoAbsolutePath, targetProcessedFilePath);
-                logger.info("Copied raw file from {} to processed path: {}", originalVideoAbsolutePath, targetProcessedFilePath);
-
-                // Store the relative path of the *copied* file in the database
-                resolutionFilePaths.put("original", fileStorageService.getRelativePath(targetProcessedFilePath));
-                video.setStatus(VideoStatus.READY);
-            }
-            // *** END OF CRITICAL CHANGE ***
-
+            video.setStatus(VideoStatus.READY); // Assume success after HLS transcoding
+            // --- HIGHLIGHT END: This block is now unconditional ---
 
             video.setResolutionFilePaths(resolutionFilePaths); // Update the map of paths in the video entity
             videoRepository.save(video); // Save final status, duration, and paths to DB
@@ -132,7 +141,7 @@ public class VideoProcessorService {
             logger.info("Video {} processed successfully. Status: {}", video.getVideoId(), video.getStatus());
             emailService.sendProcessingSuccessEmail(uploadUserEmailOrUsername, originalVideoName);
 
-            // --- DELETE THE RAW FILE HERE AFTER ALL PROCESSING (COPY/TRANSCODE) IS DONE AND DB IS UPDATED ---
+           
             try {
                 if (originalRawFilePath != null && !originalRawFilePath.isEmpty()) {
                     boolean deleted = fileStorageService.deleteFile(originalRawFilePath);
@@ -145,7 +154,7 @@ public class VideoProcessorService {
             } catch (IOException e) {
                 logger.error("Failed to delete raw file for videoId {}. It might be in use or permissions are insufficient. Error: {}", video.getVideoId(), e.getMessage());
             }
-            // --- END OF DELETION BLOCK ---
+          
 
         } catch (VideoProcessingException e) {
             logger.error("Video processing failed for {}: {}", request.getVideoId(), e.getMessage(), e);

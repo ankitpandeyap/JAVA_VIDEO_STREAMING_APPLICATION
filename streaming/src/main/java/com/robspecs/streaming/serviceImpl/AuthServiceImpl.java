@@ -30,9 +30,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordResetTokenServiceImpl passwordResetTokenService; // <--- INJECT NEW SERVICE
     private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
 
-    @Value("${security.pbkdf2.iterations:65536}")
-    private int pbkdf2Iterations;
-
+   
     @Autowired
     public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
                            StringRedisTemplate redisTemplate, MailService mailService, // <--- ADD TO CONSTRUCTOR

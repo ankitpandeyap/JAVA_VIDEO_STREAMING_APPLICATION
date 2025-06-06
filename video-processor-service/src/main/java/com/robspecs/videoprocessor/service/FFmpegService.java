@@ -18,6 +18,9 @@ import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
 import org.bytedeco.javacv.FrameRecorder;
+import org.bytedeco.javacv.Java2DFrameConverter;
+import java.io.ByteArrayOutputStream;
+import javax.imageio.ImageIO; // For ImageIO.write
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -322,6 +325,77 @@ public class FFmpegService {
                 }
             } catch (FrameGrabber.Exception e) {
                 logger.error("Error stopping/releasing grabber for video {}: {}", videoId, e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Generates a thumbnail (JPEG byte array) from a video at a specific timestamp.
+     *
+     * @param videoPath Absolute path to the video file.
+     * @param timestampMillis Timestamp in milliseconds to capture the frame (e.g., 2000 for 2 seconds).
+     * @param width Desired width of the thumbnail.
+     * @param height Desired height of the thumbnail.
+     * @return A byte array representing the JPEG image, or null if generation fails.
+     * @throws VideoProcessingException if thumbnail generation fails.
+     */
+    public byte[] generateThumbnail(Path videoPath, long timestampMillis, int width, int height) {
+        logger.info("Generating thumbnail for video: {} at {} ms, size {}x{}", videoPath, timestampMillis, width, height);
+
+        FFmpegFrameGrabber grabber = null;
+        Java2DFrameConverter converter = new Java2DFrameConverter(); // Instantiate converter
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            grabber = new FFmpegFrameGrabber(videoPath.toString());
+            grabber.start();
+            grabber.setVideoTimestamp(timestampMillis * 1000); // Set timestamp in microseconds
+
+            // Check if a video stream exists
+            if (grabber.getVideoStream() == -1) {
+                throw new VideoProcessingException("No video stream found in file: " + videoPath);
+            }
+
+            Frame frame = grabber.grabImage(); // Grab a video frame
+            if (frame == null) {
+                logger.warn("Could not grab frame for thumbnail from video: {} at {} ms. Video might be too short or corrupted. Trying first frame.", videoPath, timestampMillis);
+                // Try to grab the first frame if timestamp fails or is out of bounds
+                grabber.setVideoTimestamp(0);
+                frame = grabber.grabImage();
+                if (frame == null) {
+                    throw new VideoProcessingException("Failed to grab any frame for thumbnail from video: " + videoPath);
+                }
+            }
+
+            // Convert Bytedeco Frame to AWT BufferedImage
+            java.awt.image.BufferedImage bufferedImage = converter.getBufferedImage(frame);
+            if (bufferedImage == null) {
+                throw new VideoProcessingException("Failed to convert frame to BufferedImage for video: " + videoPath);
+            }
+
+            // Rescale the image if dimensions are specified and different from original frame
+            if (width > 0 && height > 0 && (bufferedImage.getWidth() != width || bufferedImage.getHeight() != height)) {
+                java.awt.Image scaledImage = bufferedImage.getScaledInstance(width, height, java.awt.Image.SCALE_SMOOTH);
+                java.awt.image.BufferedImage scaledBufferedImage = new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_RGB);
+                java.awt.Graphics2D g2d = scaledBufferedImage.createGraphics();
+                g2d.drawImage(scaledImage, 0, 0, null);
+                g2d.dispose();
+                bufferedImage = scaledBufferedImage; // Use the scaled image
+            }
+
+            // Write image to ByteArrayOutputStream as JPEG
+            ImageIO.write(bufferedImage, "jpeg", baos);
+            logger.info("Successfully generated thumbnail for video: {} at {} ms", videoPath, timestampMillis);
+            return baos.toByteArray();
+        } catch (IOException e) { // Catch both FFmpegFrameGrabber exceptions and IOException from ImageIO
+            logger.error("Error generating thumbnail for video {}: {}", videoPath, e.getMessage(), e);
+            throw new VideoProcessingException("Failed to generate thumbnail for video: " + videoPath, e);
+        } finally {
+            try {
+                if (grabber != null) {
+                    grabber.stop();
+                    grabber.release();
+                }
+            } catch (FrameGrabber.Exception e) {
+                logger.error("Error stopping/releasing grabber: {}", e.getMessage());
             }
         }
     }

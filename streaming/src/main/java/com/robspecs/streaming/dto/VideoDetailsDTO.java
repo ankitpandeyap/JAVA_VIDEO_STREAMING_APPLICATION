@@ -2,32 +2,41 @@ package com.robspecs.streaming.dto;
 
 import java.util.Map;
 
+import com.robspecs.streaming.enums.VideoStatus;
+
 public class VideoDetailsDTO {
 	private Long videoId;
-	private String videoName;
-	private String description;
-	private Long fileSize;
-	private String status;
-	private Long durationMillis;
-	private Long views = 0L;
-	private String uploadUsername; // Renamed to clearly indicate it's the username string
-	private Map<String, String> resolutionFilePaths;
+	 private String videoName;
+	    private String description;
+	    private Long uploadUserId;
+	    private String uploadUserName; // Or email, depending on what you expose
+	    private VideoStatus status;
+	    private Long durationMillis;
+	    private Long fileSize; // Added based on your VideoServiceImpl constructor
+	    private Long views;    // Added based on your VideoServiceImpl constructor
+	    private Map<String, String> resolutionFilePaths;
+	    private byte[] thumbnailData;
 
 	public VideoDetailsDTO() {
 		// Default constructor
 	}
 
-	public VideoDetailsDTO(Long videoId, String videoName, String description, Long fileSize, String status,
-			Long durationMillis, Long views, String uploadUsername, Map<String, String> resolutionFilePaths) {
+	public VideoDetailsDTO(Long videoId,  String videoName, String description, Long fileSize, String status,
+            Long durationMillis, Long views, String uploadUserName, Map<String, String> resolutionFilePaths,
+            byte[] thumbnailData) {
 		this.videoId = videoId;
 		this.videoName = videoName;
-		this.description = description;
-		this.fileSize = fileSize;
-		this.status = status;
-		this.durationMillis = durationMillis;
-		this.views = views;
-		this.uploadUsername = uploadUsername;
-		this.resolutionFilePaths = resolutionFilePaths;
+        this.description = description;
+        this.fileSize = fileSize;
+        // This 'status' parameter is a String, but your DTO has VideoStatus.
+        // It's better to pass VideoStatus enum directly or handle conversion here.
+        // For now, let's assume 'status' is String for this constructor.
+        this.status = VideoStatus.valueOf(status); // Convert String back to Enum
+        this.durationMillis = durationMillis;
+        this.views = views;
+        this.uploadUserName = uploadUserName;
+        this.resolutionFilePaths = resolutionFilePaths;
+        this.thumbnailData = thumbnailData; // Initialize thumbnailData
 	}
 
 	// --- Getters and Setters (auto-generate or write them out) ---
@@ -63,13 +72,7 @@ public class VideoDetailsDTO {
 		this.fileSize = fileSize;
 	}
 
-	public String getStatus() {
-		return status;
-	}
-
-	public void setStatus(String status) {
-		this.status = status;
-	}
+	
 
 	public Long getDurationMillis() {
 		return durationMillis;
@@ -87,13 +90,7 @@ public class VideoDetailsDTO {
 		this.views = views;
 	}
 
-	public String getUploadUsername() {
-		return uploadUsername;
-	}
-
-	public void setUploadUsername(String uploadUsername) {
-		this.uploadUsername = uploadUsername;
-	}
+	
 
 	public Map<String, String> getResolutionFilePaths() {
 		return resolutionFilePaths;
@@ -103,5 +100,39 @@ public class VideoDetailsDTO {
 		this.resolutionFilePaths = resolutionFilePaths;
 
 	}
+    
+	  public byte[] getThumbnailData() {
+	        return thumbnailData;
+	    }
 
+	    public void setThumbnailData(byte[] thumbnailData) {
+	        this.thumbnailData = thumbnailData;
+	    }
+
+		public Long getUploadUserId() {
+			return uploadUserId;
+		}
+
+		public void setUploadUserId(Long uploadUserId) {
+			this.uploadUserId = uploadUserId;
+		}
+
+		public String getUploadUserName() {
+			return uploadUserName;
+		}
+
+		public void setUploadUserName(String uploadUserName) {
+			this.uploadUserName = uploadUserName;
+		}
+
+		public VideoStatus getStatus() {
+			return status;
+		}
+
+		public void setStatus(VideoStatus status) {
+			this.status = status;
+		}
+	    
+	    
+	    
 }

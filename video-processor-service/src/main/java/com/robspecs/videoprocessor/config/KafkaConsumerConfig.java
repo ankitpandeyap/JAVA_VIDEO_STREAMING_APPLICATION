@@ -1,8 +1,10 @@
 package com.robspecs.videoprocessor.config;
 
 import java.util.HashMap;
+
 import java.util.Map;
 
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +27,11 @@ public class KafkaConsumerConfig {
 
 	@Value("${spring.kafka.consumer.group-id}")
 	private String groupId;
+	
+	 private final DefaultErrorHandler errorHandler;
+	 public KafkaConsumerConfig(DefaultErrorHandler errorHandler) { 
+	        this.errorHandler = errorHandler;
+	    }
 
 	@Bean
 	public ConsumerFactory<String, VideoProcessingRequest> consumerFactory() {
@@ -44,12 +51,12 @@ public class KafkaConsumerConfig {
 	}
 
 	@Bean
-	public ConcurrentKafkaListenerContainerFactory<String, VideoProcessingRequest> kafkaListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, VideoProcessingRequest> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(consumerFactory());
-		// Set concurrency if you want multiple threads/consumers in the same app
-		// instance
-		// factory.setConcurrency(3);
-		return factory;
-	}
+    public ConcurrentKafkaListenerContainerFactory<String, VideoProcessingRequest> kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, VideoProcessingRequest> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory());
+        factory.setConcurrency(1); // Keep concurrency at 1 for long-running tasks per message
+      
+        factory.setCommonErrorHandler(errorHandler); // This line tells the factory to use our custom error handler
+         return factory;
+    }
 }
