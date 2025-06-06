@@ -72,7 +72,7 @@ public class VideoDetailsDTO {
 		this.fileSize = fileSize;
 	}
 
-	
+
 
 	public Long getDurationMillis() {
 		return durationMillis;
@@ -90,7 +90,7 @@ public class VideoDetailsDTO {
 		this.views = views;
 	}
 
-	
+
 
 	public Map<String, String> getResolutionFilePaths() {
 		return resolutionFilePaths;
@@ -100,7 +100,7 @@ public class VideoDetailsDTO {
 		this.resolutionFilePaths = resolutionFilePaths;
 
 	}
-    
+
 	  public byte[] getThumbnailData() {
 	        return thumbnailData;
 	    }
@@ -132,7 +132,7 @@ public class VideoDetailsDTO {
 		public void setStatus(VideoStatus status) {
 			this.status = status;
 		}
-	    
-	    
-	    
+
+
+
 }

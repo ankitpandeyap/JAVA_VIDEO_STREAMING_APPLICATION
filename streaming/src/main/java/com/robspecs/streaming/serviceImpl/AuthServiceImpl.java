@@ -3,7 +3,6 @@ package com.robspecs.streaming.serviceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,7 +29,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordResetTokenServiceImpl passwordResetTokenService; // <--- INJECT NEW SERVICE
     private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
 
-   
+
     @Autowired
     public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
                            StringRedisTemplate redisTemplate, MailService mailService, // <--- ADD TO CONSTRUCTOR

@@ -1,5 +1,6 @@
 package com.robspecs.videoprocessor.service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException; // Added for Files.writeString
 import java.nio.file.Files;
@@ -11,6 +12,8 @@ import java.util.LinkedHashMap; // Added for LinkedHashMap
 import java.util.List;
 import java.util.Map; // Added for Map
 
+import javax.imageio.ImageIO; // For ImageIO.write
+
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
@@ -19,8 +22,6 @@ import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
 import org.bytedeco.javacv.FrameRecorder;
 import org.bytedeco.javacv.Java2DFrameConverter;
-import java.io.ByteArrayOutputStream;
-import javax.imageio.ImageIO; // For ImageIO.write
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -328,7 +329,7 @@ public class FFmpegService {
             }
         }
     }
-    
+
     /**
      * Generates a thumbnail (JPEG byte array) from a video at a specific timestamp.
      *

@@ -31,10 +31,18 @@ const VideoCard = ({ video, showActions, onEdit, onDelete }) => {
             {/* The Link component now only renders if video.videoId is valid */}
             <Link to={videoLink} className="video-card-link">
                 <div className="video-thumbnail-container">
-                    {/* Placeholder content for the thumbnail area, since no actual thumbnail is used */}
-                    <div className="video-placeholder-box">
-                        Video Placeholder
-                    </div>
+                   {video.thumbnailData ? (
+                        <img
+                            src={`data:image/jpeg;base64,${video.thumbnailData}`}
+                            alt={`Thumbnail for ${video.videoName}`}
+                            className="video-thumbnail"
+                        />
+                    ) : (
+                        // Fallback to a placeholder if thumbnailData is not available
+                        <div className="video-placeholder-box">
+                            No Thumbnail Available
+                        </div>
+                    )}  
                 </div>
                 <div className="video-info">
                     {/* TITLE: Use video.videoName from your backend DTO */}

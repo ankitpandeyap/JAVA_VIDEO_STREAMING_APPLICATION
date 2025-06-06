@@ -240,7 +240,7 @@ public class VideoServiceImpl implements VideoService {
 		}
 		return video;
 	}
-	
+
 	@Override
     @Transactional
     public List<VideoDetailsDTO> getVideosByCurrentUser(User user) {

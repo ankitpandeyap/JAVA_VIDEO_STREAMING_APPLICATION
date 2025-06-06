@@ -25,7 +25,7 @@ public interface VideoService {
     // You might also want a method to retrieve a video by its path for streaming purposes
     // This could return a Resource or simply the Path, depending on how your controller handles it
     Video getVideoByFilePath(String relativeFilePath);
-    
+
     /**
     * Retrieves all videos uploaded by a specific user.
     * @param user The authenticated user.

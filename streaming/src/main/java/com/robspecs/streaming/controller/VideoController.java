@@ -1,33 +1,42 @@
 package com.robspecs.streaming.controller;
 
-import com.robspecs.streaming.dto.VideoDetailsDTO;
-import com.robspecs.streaming.dto.VideoUploadDTO;
-import com.robspecs.streaming.dto.VideoUpdateRequest; // <--- NEW IMPORT
-import com.robspecs.streaming.entities.User;
-import com.robspecs.streaming.entities.Video;
-import com.robspecs.streaming.enums.VideoStatus;
-import com.robspecs.streaming.exceptions.FileNotFoundException;
-import com.robspecs.streaming.service.FileStorageService;
-import com.robspecs.streaming.service.VideoService;
-import jakarta.validation.Valid; // <--- NEW IMPORT (if you plan to use @Valid for DTOs)
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.io.Resource;
-import org.springframework.http.CacheControl;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpRange;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.robspecs.streaming.dto.VideoDetailsDTO;
+import com.robspecs.streaming.dto.VideoUpdateRequest; // <--- NEW IMPORT
+import com.robspecs.streaming.dto.VideoUploadDTO;
+import com.robspecs.streaming.entities.User;
+import com.robspecs.streaming.entities.Video;
+import com.robspecs.streaming.enums.VideoStatus;
+import com.robspecs.streaming.exceptions.FileNotFoundException;
+import com.robspecs.streaming.service.FileStorageService;
+import com.robspecs.streaming.service.VideoService;
 
 @RestController
 @RequestMapping("/api/videos")
@@ -238,8 +247,8 @@ public class VideoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-	
-	 @GetMapping("/my-videos") 
+
+	 @GetMapping("/my-videos")
 	    public ResponseEntity<List<VideoDetailsDTO>> getMyVideos(@AuthenticationPrincipal User currentUser) {
 	        logger.info("Fetching videos for current user: {}", currentUser.getUsername());
 	        try {
@@ -251,8 +260,8 @@ public class VideoController {
 	        }
 	    }
 
-	    
-	    @PatchMapping("/{videoId}") 
+
+	    @PatchMapping("/{videoId}")
 	    public ResponseEntity<VideoDetailsDTO> updateVideo(@PathVariable Long videoId,
 	                                                       @RequestBody VideoUpdateRequest updateRequest,
 	                                                       @AuthenticationPrincipal User currentUser) {
@@ -272,7 +281,7 @@ public class VideoController {
 	        }
 	    }
 
-	    
+
 	    @DeleteMapping("/{videoId}")
 	    public ResponseEntity<Void> deleteVideo(@PathVariable Long videoId,
 	                                            @AuthenticationPrincipal User currentUser) {
@@ -291,5 +300,5 @@ public class VideoController {
 	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 	        }
 	    }
-	
+
 }

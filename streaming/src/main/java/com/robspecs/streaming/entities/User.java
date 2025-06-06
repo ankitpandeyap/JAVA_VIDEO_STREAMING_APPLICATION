@@ -27,7 +27,7 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "users", indexes = { @Index(name = "email_idx", columnList = "email", unique = true),
 		@Index(name = "username_idx", columnList = "userName", unique = true) })
-public class User implements UserDetails { 
+public class User implements UserDetails {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,10 +1,8 @@
 package com.robspecs.videoprocessor.config;
 
 import java.util.HashMap;
-
 import java.util.Map;
 
-import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +12,7 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 
 import com.robspecs.videoprocessor.dto.VideoProcessingRequest; // Import the DTO from its new location
@@ -27,9 +26,9 @@ public class KafkaConsumerConfig {
 
 	@Value("${spring.kafka.consumer.group-id}")
 	private String groupId;
-	
+
 	 private final DefaultErrorHandler errorHandler;
-	 public KafkaConsumerConfig(DefaultErrorHandler errorHandler) { 
+	 public KafkaConsumerConfig(DefaultErrorHandler errorHandler) {
 	        this.errorHandler = errorHandler;
 	    }
 
@@ -55,7 +54,7 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, VideoProcessingRequest> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
         factory.setConcurrency(1); // Keep concurrency at 1 for long-running tasks per message
-      
+
         factory.setCommonErrorHandler(errorHandler); // This line tells the factory to use our custom error handler
          return factory;
     }

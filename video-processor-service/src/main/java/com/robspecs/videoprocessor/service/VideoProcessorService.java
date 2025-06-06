@@ -30,10 +30,10 @@ public class VideoProcessorService {
     private final FFmpegService ffmpegService;
     private final EmailService emailService;
 
-  
+
     // private static final long SMALL_VIDEO_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
     // private static final long MEDIUM_VIDEO_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
-  
+
     public VideoProcessorService(VideosRepository videoRepository, FileStorageService fileStorageService,
                                  FFmpegService ffmpegService, EmailService emailService) {
         this.videoRepository = videoRepository;
@@ -85,7 +85,7 @@ public class VideoProcessorService {
             video.setDurationMillis(durationMillis);
             logger.info("Video {} duration set to {} ms.", request.getVideoId(), durationMillis);
 
-            
+
             try {
                 // Determine thumbnail capture timestamp: 2 seconds, or half the video duration if shorter.
                 // Ensures a frame is taken from within the video even if it's very short.
@@ -93,11 +93,11 @@ public class VideoProcessorService {
 
                 // Desired thumbnail dimensions (e.g., standard 16:9 aspect ratio)
                 int thumbnailWidth = 640;
-                int thumbnailHeight = 360; 
+                int thumbnailHeight = 360;
 
                 byte[] thumbnailBytes = ffmpegService.generateThumbnail(
                     originalVideoAbsolutePath,
-                    captureTimestampMillis, 
+                    captureTimestampMillis,
                     thumbnailWidth,
                     thumbnailHeight
                 );
@@ -110,7 +110,7 @@ public class VideoProcessorService {
             } catch (Exception e) { // Catch any other unexpected errors during thumbnail generation
                 logger.error("An unexpected error occurred during thumbnail generation for video {}: {}", request.getVideoId(), e.getMessage(), e);
                 video.setThumbnailData(null);
-            }            
+            }
             // 2. Transcode all files to HLS (UNCONDITIONAL)
             Map<String, String> resolutionFilePaths = new HashMap<>();
 
@@ -141,7 +141,7 @@ public class VideoProcessorService {
             logger.info("Video {} processed successfully. Status: {}", video.getVideoId(), video.getStatus());
             emailService.sendProcessingSuccessEmail(uploadUserEmailOrUsername, originalVideoName);
 
-           
+
             try {
                 if (originalRawFilePath != null && !originalRawFilePath.isEmpty()) {
                     boolean deleted = fileStorageService.deleteFile(originalRawFilePath);
@@ -154,7 +154,7 @@ public class VideoProcessorService {
             } catch (IOException e) {
                 logger.error("Failed to delete raw file for videoId {}. It might be in use or permissions are insufficient. Error: {}", video.getVideoId(), e.getMessage());
             }
-          
+
 
         } catch (VideoProcessingException e) {
             logger.error("Video processing failed for {}: {}", request.getVideoId(), e.getMessage(), e);

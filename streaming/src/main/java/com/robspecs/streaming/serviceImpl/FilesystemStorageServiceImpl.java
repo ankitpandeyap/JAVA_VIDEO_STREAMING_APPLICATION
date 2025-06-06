@@ -125,9 +125,9 @@ public class FilesystemStorageServiceImpl implements FileStorageService {
 		}
 		return false;
 	}
-	
-	
-	
+
+
+
 	 @Override
 	    public boolean deleteDirectory(String relativeDirectoryPath) throws IOException { // <--- NEW METHOD IMPLEMENTATION
 	        if (!StringUtils.hasText(relativeDirectoryPath)) {

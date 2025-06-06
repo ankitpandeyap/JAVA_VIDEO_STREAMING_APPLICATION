@@ -17,11 +17,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import jakarta.persistence.Lob;
 
 @Entity
 @Table(name = "videos", uniqueConstraints = {
@@ -64,8 +64,8 @@ public class Video {
 
 	@Column(nullable = false)
 	private Long views = 0L;
-	
-	
+
+
 	@Lob // Indicates that this field should be stored as a Large Object (BLOB)
     @Column(name = "thumbnail_data", columnDefinition = "BLOB") // Explicitly define column type if needed for specific DBs
     private byte[] thumbnailData;
@@ -155,7 +155,7 @@ public class Video {
 	public void setViews(Long views) {
 		this.views = views;
 	}
-	
+
 	public byte[] getThumbnailData() {
 	        return thumbnailData;
 	    }
