@@ -84,6 +84,8 @@ Modular Architecture: Designed with modularity in mind, allowing for easy integr
 Rich React Frontend: Features protected routes, toast notifications for user feedback, and comprehensive authentication context management, ensuring a clear separation of UI components and pages.
 
 🛠️ Tech Stack
+---
+
 Layer | Technology
 ---|---
 |Backend | Main Application: Spring Boot 3.x, Spring WebFlux (for streaming), Spring Data JPA, Lombok, Logback. 
@@ -121,42 +123,76 @@ Redis Setup with Docker:
 
 docker run --name redis-streamflow -p 6379:6379 -d redis
 
+-------------
+
 Kafka Setup with Docker:
+
 For example, using a simple docker-compose.yml file:
 
+
 version: '3'
+
 services:
+
   zookeeper:
+  
     image: confluentinc/cp-zookeeper:7.0.1
+    
     hostname: zookeeper
+    
     container_name: zookeeper
+    
     ports:
+    
       - "2181:2181"
+      
     environment:
+    
       ZOOKEEPER_CLIENT_PORT: 2181
+      
       ZOOKEEPER_TICK_TIME: 2000
+      
   kafka:
+  
     image: confluentinc/cp-kafka:7.0.1
+    
     hostname: kafka
+    
     container_name: kafka
+    
     ports:
+    
       - "9092:9092"
+      
     environment:
+    
       KAFKA_BROKER_ID: 1
+      
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      
     depends_on:
       - zookeeper
+      
 
 Run with: docker-compose up -d
 
+
+------------------------------------
 Node.js & npm (for frontend)
 
+
 ⚙️ Core Configuration
+-
 Update your application.properties (or application.yml) with the following details for both the main streaming application and the video processing microservice:
 
 Database Configuration
@@ -189,17 +225,18 @@ spring.data.redis.password= # Leave empty if no password is set for Redis
 Kafka Configuration (Both Applications)
 Specify the bootstrap servers for your Kafka cluster, used for message queuing of video processing requests. The Video Processing Microservice will also require a group-id for its consumer.
 
-# For both applications
+ For both applications
 spring.kafka.bootstrap-servers=localhost:9092 # Adjust if your Kafka broker is elsewhere
 
-# For Video Processing Microservice specifically
+ For Video Processing Microservice specifically
 spring.kafka.consumer.group-id=video-processor-group
-# Ensures the consumer processes only one message at a time, suitable for long-running tasks.
+ Ensures the consumer processes only one message at a time, suitable for long-running tasks.
 spring.kafka.consumer.properties.max.poll.records=1
-# Increased to 50 minutes (3,000,000 ms) to accommodate long video processing times without group rebalancing.
+// Increased to 50 minutes (3,000,000 ms) to accommodate long video processing times without group rebalancing.
 spring.kafka.consumer.properties.max.poll.interval.ms=3000000
 
 CORS Configuration (Main Application Only)
+-
 If your frontend and backend are on different domains/ports during development (e.g., React on 3000, Spring Boot on 8080), you'll need CORS configured:
 
 cors.allowed.origins=http://localhost:3000
@@ -208,6 +245,7 @@ cors.allowed.headers=*
 cors.allowed.credentials=true
 
 Frontend Integration Properties (Main Application Only)
+-
 Specify the base URL for your frontend's password reset page. This is used by the backend to construct the password reset email link.
 
 app.frontend.password-reset-url=http://localhost:3000/reset-password
@@ -223,124 +261,128 @@ spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
 
 🧱 Module Structure
+----
 StreamFlow is designed with a modular, multi-service backend architecture comprising two main Spring Boot applications: the Main Streaming Application and the Video Processing Microservice.
 
 Backend - Main Streaming Application (com.robspecs.streaming)
+---
 This application primarily handles user authentication, video metadata management, and serving processed video streams.
 
-config: Application-wide configurations (e.g., security, file storage, Redis, Kafka, CORS).
+⦁	config: Application-wide configurations (e.g., security, file storage, Redis, Kafka, CORS).
+⦁	controller: REST endpoints for video management, user authentication, and streaming.
 
-controller: REST endpoints for video management, user authentication, and streaming.
+⦁	service: Business logic for user operations, data manipulation, including AuthService, UserService, OtpService, MailService, TokenBlacklistService, PasswordResetTokenService, and FileStorageService.
 
-service: Business logic for user operations, data manipulation, including AuthService, UserService, OtpService, MailService, TokenBlacklistService, PasswordResetTokenService, and FileStorageService.
+⦁	repository: Data access layer for interacting with MySQL, including UserRepository and VideosRepository, with support for custom queries and Pessimistic Locking for Video entities to ensure data consistency during updates. Shared with the Video Processing Microservice.
 
-repository: Data access layer for interacting with MySQL, including UserRepository and VideosRepository, with support for custom queries and Pessimistic Locking for Video entities to ensure data consistency during updates. Shared with the Video Processing Microservice.
+⦁	entity: JPA entities representing database tables, such as User (implementing UserDetails for Spring Security integration) and Video (with fields for videoName, originalFilePath, description, fileSize, status, durationMillis, resolutionFilePaths, uploadUser, views, and thumbnailData). Shared with the Video Processing Microservice.
 
-entity: JPA entities representing database tables, such as User (implementing UserDetails for Spring Security integration) and Video (with fields for videoName, originalFilePath, description, fileSize, status, durationMillis, resolutionFilePaths, uploadUser, views, and thumbnailData). Shared with the Video Processing Microservice.
+⦁	security: Custom JWT authentication filters (JWTAuthenticationFilter for login, JWTValidationFilter for access token validation, JWTRefreshFilter for explicit token refresh), Spring Security configurations (SecurityConfig), custom authentication entry point (JWTAuthenticationEntryPoint), and the HlsTokenValidationFilter for stream security.
 
-security: Custom JWT authentication filters (JWTAuthenticationFilter for login, JWTValidationFilter for access token validation, JWTRefreshFilter for explicit token refresh), Spring Security configurations (SecurityConfig), custom authentication entry point (JWTAuthenticationEntryPoint), and the HlsTokenValidationFilter for stream security.
+⦁	utils: Helper classes including JWTUtils for JWT token generation and validation (both regular and HLS-specific tokens).
 
-utils: Helper classes including JWTUtils for JWT token generation and validation (both regular and HLS-specific tokens).
+⦁	dto: Data Transfer Objects for request/response payloads (e.g., RegistrationDTO, LoginDTO, ForgotPasswordRequest, ResetPasswordRequest, VideoUploadDTO, VideoUpdateRequest, VideoDetailsDTO, UserDTO, UserProfileDTO).
 
-dto: Data Transfer Objects for request/response payloads (e.g., RegistrationDTO, LoginDTO, ForgotPasswordRequest, ResetPasswordRequest, VideoUploadDTO, VideoUpdateRequest, VideoDetailsDTO, UserDTO, UserProfileDTO).
+⦁	enums: Enumerations for statuses and roles (VideoStatus, Roles).
 
-enums: Enumerations for statuses and roles (VideoStatus, Roles).
+⦁	exceptions: Custom exception classes for specific error scenarios.
 
-exceptions: Custom exception classes for specific error scenarios.
-
-exceptionhandler: Global exception handler (GlobalExceptionHandler).
+⦁	exceptionhandler: Global exception handler (GlobalExceptionHandler).
 
 Backend - Video Processing Microservice (com.robspecs.videoprocessor)
+---
 This is a separate Spring Boot application responsible solely for consuming video processing requests from Kafka, performing transcoding, and updating video metadata.
 
 VideoProcessorServiceApplication: The main application class for this microservice, configured to scan components, JPA repositories, and entities from both its own package and the shared com.robspecs.streaming package.
 
-config:
+⦁	config:
 
-KafkaConsumerConfig: Configures Kafka consumer properties and integrates a custom error handler for robust message consumption.
+⦁	KafkaConsumerConfig: Configures Kafka consumer properties and integrates a custom error handler for robust message consumption.
 
-KafkaErrorHandlerConfig: Defines a DefaultErrorHandler for Kafka listeners, specifying retry logic (e.g., 2 retries with a 5-second fixed backoff) before logging failed processing.
+⦁	KafkaErrorHandlerConfig: Defines a DefaultErrorHandler for Kafka listeners, specifying retry logic (e.g., 2 retries with a 5-second fixed backoff) before logging failed processing.
+	
+⦁	AsyncConfig: Configures ThreadPoolTaskExecutor beans (taskExecutor for general async tasks like emails and videoProcessingExecutor specifically for video processing tasks) to enable asynchronous method execution.
 
-AsyncConfig: Configures ThreadPoolTaskExecutor beans (taskExecutor for general async tasks like emails and videoProcessingExecutor specifically for video processing tasks) to enable asynchronous method execution.
+⦁	dto:-
+  VideoProcessingRequest: A Serializable DTO used for messages sent via Kafka, containing videoId, originalFilePath, fileSize, uploadUserEmailOrUsername, and uploadUserId.
 
-dto:
+	VideoMetadata: A Serializable DTO used internally to encapsulate video information (duration, dimensions, codecs, bitrate) extracted by ffmpeg.
 
-VideoProcessingRequest: A Serializable DTO used for messages sent via Kafka, containing videoId, originalFilePath, fileSize, uploadUserEmailOrUsername, and uploadUserId.
+⦁	service:
+	
+ VideoProcessorService: The core service that listens for Kafka messages, immediately submitting the complex processing to a dedicated asynchronous thread pool (videoProcessingExecutor). It includes:
 
-VideoMetadata: A Serializable DTO used internally to encapsulate video information (duration, dimensions, codecs, bitrate) extracted by ffmpeg.
+ Idempotency Check: Skips processing if a video is already marked READY, handling potential duplicate Kafka messages.
+	
+ Workflow Orchestration: Manages the sequence of operations: fetching video metadata, generating a thumbnail, performing multi-resolution HLS transcoding, updating the video's status      (PROCESSING -> READY or FAILED), and sending email notifications.
 
-service:
+ Raw File Cleanup: Deletes the original uploaded video file from storage after successful processing.
+	
+ FFmpegService: This crucial service within the microservice handles all ffmpeg interactions using Bytedeco JavaCV. It provides:
+	
+ getMediaInfo: Extracts detailed metadata (duration, resolution, codecs, bitrate) from the original video.
+	
+ transcodeToHLS: Transcodes the video into multiple HLS resolution profiles (e.g., 240p, 360p, 480p, 720p, 1080p). It generates individual .m3u8 playlists and .ts segments for each        resolution, and then a master .m3u8 playlist that references all available renditions for adaptive streaming.
+ 
+ generateThumbnail: Extracts a frame from the video at a specified timestamp and generates a JPEG thumbnail.
 
-VideoProcessorService: The core service that listens for Kafka messages, immediately submitting the complex processing to a dedicated asynchronous thread pool (videoProcessingExecutor). It includes:
+ FileStorageService: A dedicated service for managing all video-related files on the local filesystem. It includes methods for storeFile, loadFileAsResource,                                resolvePath,createDirectory, deleteDirectory, deleteFile, getProcessedVideoDirectory, and copyFile.
 
-Idempotency Check: Skips processing if a video is already marked READY, handling potential duplicate Kafka messages.
-
-Workflow Orchestration: Manages the sequence of operations: fetching video metadata, generating a thumbnail, performing multi-resolution HLS transcoding, updating the video's status (PROCESSING -> READY or FAILED), and sending email notifications.
-
-Raw File Cleanup: Deletes the original uploaded video file from storage after successful processing.
-
-FFmpegService: This crucial service within the microservice handles all ffmpeg interactions using Bytedeco JavaCV. It provides:
-
-getMediaInfo: Extracts detailed metadata (duration, resolution, codecs, bitrate) from the original video.
-
-transcodeToHLS: Transcodes the video into multiple HLS resolution profiles (e.g., 240p, 360p, 480p, 720p, 1080p). It generates individual .m3u8 playlists and .ts segments for each resolution, and then a master .m3u8 playlist that references all available renditions for adaptive streaming.
-
-generateThumbnail: Extracts a frame from the video at a specified timestamp and generates a JPEG thumbnail.
-
-FileStorageService: A dedicated service for managing all video-related files on the local filesystem. It includes methods for storeFile, loadFileAsResource, resolvePath, createDirectory, deleteDirectory, deleteFile, getProcessedVideoDirectory, and copyFile.
-
-EmailService: An @Async service for sending email notifications to users regarding the success or failure of their video processing tasks.
+ EmailService: An @Async service for sending email notifications to users regarding the success or failure of their video processing tasks.
 
 Frontend (React.js)
+--
 The React frontend is built to provide an intuitive and responsive user experience for video streaming.
 
-AuthContext.js (AuthContext and AuthProvider): A central React Context for managing the global authentication state.
+⦁	AuthContext.js (AuthContext and AuthProvider): A central React Context for managing the global authentication state.
+	
+⦁	Maintains isAuthenticated (boolean), accessToken (string), and loadingAuth (boolean) states.
+	
+⦁	On initial load, it attempts to validate any stored token via /auth/validate to determine authentication status.
+	
+⦁	Provides login and logout functions to update authentication state and interact with localStorage for token persistence.
+	
+⦁	Registers an updateToken callback with axiosInstance's interceptors, allowing automatic token refresh to update global accessToken state.
+	
+⦁	axiosInstance.js: A centralized Axios instance configured with the API base URL and withCredentials for cookie handling. Includes powerful interceptors for:
 
-Maintains isAuthenticated (boolean), accessToken (string), and loadingAuth (boolean) states.
+⦁	Request Interceptor: Automatically attaches the user's accessToken from localStorage to all outgoing requests.
 
-On initial load, it attempts to validate any stored token via /auth/validate to determine authentication status.
+⦁	Response Interceptor: Implements robust automatic token refresh logic. If a 401 Unauthorized error occurs (indicating an expired access token), it triggers a call to /auth/refresh,  queues subsequent API requests, and retries them with the new token upon successful refresh. If refresh fails, it logs out the user and redirects to the login page.
 
-Provides login and logout functions to update authentication state and interact with localStorage for token persistence.
+⦁	config.js: Defines the API_BASE_URL for the backend, centralizing API endpoint configuration.
 
-Registers an updateToken callback with axiosInstance's interceptors, allowing automatic token refresh to update global accessToken state.
+⦁	Footer.jsx: A simple presentational component for the application's footer.
 
-axiosInstance.js: A centralized Axios instance configured with the API base URL and withCredentials for cookie handling. Includes powerful interceptors for:
+⦁	Header.jsx: The main navigation bar, dynamically displaying "MyTube" and a page-specific title. Provides navigation links and buttons for login/register/upload/logout.
 
-Request Interceptor: Automatically attaches the user's accessToken from localStorage to all outgoing requests.
+⦁LoadingSpinner.jsx: A reusable component to display a loading animation.
 
-Response Interceptor: Implements robust automatic token refresh logic. If a 401 Unauthorized error occurs (indicating an expired access token), it triggers a call to /auth/refresh, queues subsequent API requests, and retries them with the new token upon successful refresh. If refresh fails, it logs out the user and redirects to the login page.
+⦁	Modal.jsx: A generic, reusable modal component for displaying overlays.
 
-config.js: Defines the API_BASE_URL for the backend, centralizing API endpoint configuration.
+⦁	ProtectedRoute.jsx: A React Router wrapper component that ensures only authenticated users can access specific routes.
 
-Footer.jsx: A simple presentational component for the application's footer.
+⦁	Sidebar.jsx: Provides left-hand navigation for authenticated users (Discover, My Videos, Profile).
+	
+⦁	VideoCard.jsx: A component responsible for displaying individual video details on dashboards and user's video lists.
 
-Header.jsx: The main navigation bar, dynamically displaying "MyTube" and a page-specific title. Provides navigation links and buttons for login/register/upload/logout.
+⦁	UploadVideoModal.jsx: A modal form for users to upload new videos, with progress bar and client-side validation. Uses react-toastify for notifications.
+	
+⦁	Dashboard.jsx: The main public video feed page, fetching and displaying all available videos.
 
-LoadingSpinner.jsx: A reusable component to display a loading animation.
+⦁	ForgotPasswordPage.jsx: Allows users to initiate the password reset process.
 
-Modal.jsx: A generic, reusable modal component for displaying overlays.
+⦁	Login.jsx: Handles user login with enhanced error handling and "Forgot Password?" link.
+	
+⦁	MyVideosPage.jsx: Displays a list of videos uploaded by the currently authenticated user, with edit and delete functionality.
 
-ProtectedRoute.jsx: A React Router wrapper component that ensures only authenticated users can access specific routes.
+⦁	ProfilePage.jsx: Displays the authenticated user's profile information.
 
-Sidebar.jsx: Provides left-hand navigation for authenticated users (Discover, My Videos, Profile).
-
-VideoCard.jsx: A component responsible for displaying individual video details on dashboards and user's video lists.
-
-UploadVideoModal.jsx: A modal form for users to upload new videos, with progress bar and client-side validation. Uses react-toastify for notifications.
-
-Dashboard.jsx: The main public video feed page, fetching and displaying all available videos.
-
-ForgotPasswordPage.jsx: Allows users to initiate the password reset process.
-
-Login.jsx: Handles user login with enhanced error handling and "Forgot Password?" link.
-
-MyVideosPage.jsx: Displays a list of videos uploaded by the currently authenticated user, with edit and delete functionality.
-
-ProfilePage.jsx: Displays the authenticated user's profile information.
-
-VideoPlayerPage.jsx: Manages the video playback using Video.js and HLS.js, including dynamic URL fetching and quality level selection.
+⦁	VideoPlayerPage.jsx: Manages the video playback using Video.js and HLS.js, including dynamic URL fetching and quality level selection.
 
 🎬 Video Processing & Streaming Flow
+--
+
 Video Upload:
 
 Client Upload: User uploads a video via UploadVideoModal. Form data is sent to the Main Streaming Application.
@@ -372,6 +414,7 @@ HLS Segment Delivery: Once validated, the backend serves the .m3u8 playlist and 
 View Count Update: The backend increments the video's view counter, using JPA Pessimistic Locking for accurate concurrent updates.
 
 🔐 Authentication Flow
+--
 Register: User registers via /api/auth/register after successful OTP verification. The RegistrationDTO is validated, and the account is enabled.
 
 OTP Verification:
@@ -405,6 +448,7 @@ Forgot Password: User requests password reset via /api/auth/forgot-password. Aut
 Reset Password: User provides new password and reset token to /api/auth/reset-password. AuthService validates the token, updates the password (BCryptPasswordEncoder), invalidates the token in Redis, and sends a confirmation email.
 
 🚀 Production-Ready Practices (Optional Enhancements)
+-----
 These enhancements are planned for future development to make StreamFlow even more robust and scalable:
 
 Add Swagger/OpenAPI documentation for REST APIs to make development and API consumption easier.
@@ -436,8 +480,8 @@ Transaction Management: Ensure robust @Transactional annotations are correctly a
 Frontend Error Handling: Enhance frontend to gracefully handle and display error messages from the backend's global exception handler.
 
 🧑‍💻 Author
+--
 Ankit Pandey
 
-LinkedIn (Placeholder - please replace with actual link)
-
-GitHub (Placeholder - please replace with actual link)
+LinkedIn (https://www.linkedin.com/in/ankitpandeyap/)
+GitHub (@ankitpandeyap)
