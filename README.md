@@ -484,4 +484,5 @@ Frontend Error Handling: Enhance frontend to gracefully handle and display error
 Ankit Pandey
 
 LinkedIn (https://www.linkedin.com/in/ankitpandeyap/)
-GitHub (@ankitpandeyap)
+
+GitHub (https://github.com/ankitpandeyap)
