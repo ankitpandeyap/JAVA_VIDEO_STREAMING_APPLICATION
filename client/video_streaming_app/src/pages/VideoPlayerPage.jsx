@@ -4,10 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import videojs from "video.js";
 import "@videojs/http-streaming"; // Important for HLS playback
 import "video.js/dist/video-js.css"; // Default Video.js styles
-// NEW: Import the Silvermine quality selector plugin and its CSS
-// ALL IMPORTS MUST BE AT THE TOP OF THE FILE
-import '@silvermine/videojs-quality-selector/dist/css/quality-selector.css';
-import '@silvermine/videojs-quality-selector';
+// Removed: Silvermine quality selector plugin and its CSS imports
 
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
@@ -15,10 +12,6 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import axiosInstance from "../api/axiosInstance";
 import { toast } from "react-toastify";
 import "../css/VideoPlayerPage.css";
-
-// You can place console.log statements or other non-import code here, AFTER all imports
-console.log("Silvermine Video.js Quality Selector imported."); // Moved for ESLint compliance
-
 
 const VideoPlayerPage = () => {
   const { videoId } = useParams();
@@ -117,23 +110,8 @@ const VideoPlayerPage = () => {
           console.log('Video.js player is ready!');
           playerRef.current = player;
 
-          // **CRITICAL CHECK:** Ensure the QualitySelector component is registered
-          // before trying to add it to the control bar.
-          if (videojs.getComponent('QualitySelector')) {
-              player.controlBar.addChild('QualitySelector');
-              console.log("Silvermine Quality Selector added to control bar.");
-          } else {
-              console.error("ERROR: QualitySelector component was not found after import. Plugin registration failed or is delayed.");
-              // You can add more debugging here if needed, like player.children()
-          }
-
-          // The qualityLevels API is available because @videojs/http-streaming
-          // implicitly uses/provides it.
-          const qualityLevels = player.qualityLevels();
-          qualityLevels.on('addqualitylevel', function(event) {
-            const qualityLevel = event.qualityLevel;
-            console.log('New quality level added:', qualityLevel.height, 'p');
-          });
+          // Removed: qualityLevels API usage as it's not available without the specific plugin
+          // @videojs/http-streaming handles adaptive bitrate automatically in the background.
         });
       } else {
         // If player already exists, just update the source
@@ -141,13 +119,6 @@ const VideoPlayerPage = () => {
           src: hlsPlaybackUrl,
           type: 'application/x-mpegURL',
         });
-        // This is a safeguard: if the control bar somehow loses the QualitySelector
-        // on source change, re-add it. Highly unlikely for this plugin, but good practice.
-        if (playerRef.current && playerRef.current.controlBar && !playerRef.current.controlBar.getChild('QualitySelector')) {
-            if (videojs.getComponent('QualitySelector')) {
-                playerRef.current.controlBar.addChild('QualitySelector');
-            }
-        }
       }
     }
 
