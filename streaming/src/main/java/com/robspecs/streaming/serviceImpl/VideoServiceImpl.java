@@ -118,12 +118,12 @@ public class VideoServiceImpl implements VideoService {
 
 		// Basic authorization check: Ensure the user owns the video or is an admin
 		// You might want to refine this based on your Roles enum
-		if (!video.getUploadUser().getUserId().equals(user.getUserId())
-				&& user.getRole() != com.robspecs.streaming.enums.Roles.ADMIN) {
-			logger.warn("User {} attempted to access video {} which they do not own and are not admin.",
-					user.getUsername(), videoId);
-			throw new SecurityException("Access denied to video: " + videoId); // Or a custom AccessDeniedException
-		}
+//		if (!video.getUploadUser().getUserId().equals(user.getUserId())
+//				&& user.getRole() != com.robspecs.streaming.enums.Roles.ADMIN) {
+//			logger.warn("User {} attempted to access video {} which they do not own and are not admin.",
+//					user.getUsername(), videoId);
+//			throw new SecurityException("Access denied to video: " + videoId); // Or a custom AccessDeniedException
+//		}
 
 		// Convert entity to DTO
 		return convertToVideoDetailsDTO(video);
