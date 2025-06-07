@@ -42,7 +42,7 @@ const Header = () => {
     return (
         <header className="header-bar">
             <div className="header-logo-container"> {/* New container for just the logo */}
-                <Link to="/">MyTube</Link>
+                <Link to="/">StreamFlow</Link>
             </div>
 
             {/* Render the dynamic page title in its own centered div */}
