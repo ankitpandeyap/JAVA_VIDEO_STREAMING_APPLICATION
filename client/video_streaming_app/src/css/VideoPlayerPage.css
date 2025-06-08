@@ -37,13 +37,13 @@
     padding: 1.5rem; /* Default padding for content area */
 }
 
-/* --- NEW/MODIFIED STYLES BELOW --- */
+/* --- CORRECTED STYLES BELOW --- */
 
 /* Container for the video player and details, centering it on the screen */
 .video-player-container {
     /* To prevent the player from being too long and causing scroll,
-       we set a reasonable max-width. 720px maintains a good balance
-       for a typical YouTube-like player size on larger screens. */
+        we set a reasonable max-width. 720px maintains a good balance
+        for a typical YouTube-like player size on larger screens. */
     max-width: 720px;
     width: 100%; /* Ensures it's responsive on smaller screens */
     margin: 0 auto; /* Centers the container */
@@ -52,58 +52,42 @@
     gap: 1.5rem;
 }
 
-/* Wrapper for Video.js player to maintain aspect ratio */
+/* Wrapper for ReactPlayer to maintain aspect ratio */
 .player-wrapper {
     position: relative;
     padding-top: 56.25%; /* **CRITICAL**: This creates the 16:9 aspect ratio (9/16 = 0.5625) */
-    background-color: #000; /* Black background for player area */
+    background-color: #000; /* Black background for player area, will show for letterboxing/pillarboxing */
     border-radius: var(--border-radius-md);
     overflow: hidden; /* Ensures video stays within rounded corners */
 }
 
-/* Styles for Video.js player itself */
-/* This ensures the Video.js player UI fills its aspect-ratio-maintained wrapper */
-.video-js {
+/*
+    CRITICAL: Ensure ReactPlayer's internal div fills the aspect-ratio wrapper.
+    ReactPlayer typically adds a class 'react-player' to its outermost div.
+    If not, we target the immediate child div of .player-wrapper.
+*/
+.player-wrapper .react-player,
+.player-wrapper > div:first-child {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100% !important; /* **CRITICAL**: Ensures the player UI expands to fill the wrapper */
-    height: 100% !important; /* **CRITICAL**: Ensures the player UI expands to fill the wrapper */
+    width: 100%;
+    height: 100%;
 }
 
-/* Ensure the actual video element within Video.js does not stretch */
-.video-js .vjs-tech {
-    /* **NEW/CRITICAL**: This prevents the video content from stretching.
-       'contain' scales the video to fit entirely within the player,
-       adding black bars if the video's aspect ratio doesn't match 16:9. */
+/*
+    Optional: By default, ReactPlayer often uses `object-fit: cover`
+    on the actual `<video>` tag to fill the space, which means it might
+    crop the video if the aspect ratios don't match.
+    If you prefer the video to always be entirely visible (i.e., contain)
+    and show black bars for letterboxing/pillarboxing, you can use this:
+*/
+/*
+.player-wrapper video {
     object-fit: contain;
-    /* You could use 'object-fit: cover;' if you prefer the video to
-       always fill the entire player area, even if it means cropping
-       some parts of the video (like YouTube often does).
-       For "not stretched," 'contain' is the correct choice. */
 }
+*/
 
-/* Optional: Basic overrides for Video.js default theme to match your dark theme */
-/* Adjust these as needed to blend with your design */
-.video-js .vjs-control-bar {
-    background-color: rgba(0, 0, 0, 0.8); /* Slightly transparent dark control bar */
-    color: var(--text-color-light); /* Light icons/text */
-}
-
-.video-js .vjs-slider {
-    background-color: rgba(255, 255, 255, 0.2); /* Lighter slider background */
-}
-
-.video-js .vjs-play-progress,
-.video-js .vjs-volume-level {
-    background-color: var(--primary-color); /* YouTube red for progress bars */
-}
-
-.video-js .vjs-time-tooltip,
-.video-js .vjs-menu-button.vjs-unfold-menu:before,
-.video-js .vjs-time-control {
-    color: var(--text-color-light);
-}
 
 /* Video Details Section */
 .video-details {
@@ -168,25 +152,6 @@
     text-align: center;
     color: var(--text-color-medium);
     padding: 2rem;
-}
-
-/* --- Video.js Big Play Button Centering --- */
-.video-js .vjs-big-play-button {
-    /* Ensure it's positioned absolutely within the player */
-    position: absolute;
-    /* Center horizontally and vertically */
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%); /* Moves the element by half its own width/height to perfectly center it */
-}
-
-/* Optional: Ensure the icon/text inside the button is also centered */
-.video-js .vjs-big-play-button .vjs-icon-placeholder {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: 100%;
 }
 
 

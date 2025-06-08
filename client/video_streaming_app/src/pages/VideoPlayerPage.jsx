@@ -1,19 +1,14 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-
-// CORE VIDEO.JS AND ITS PLUGINS
-import videojs from "video.js";
-import "@videojs/http-streaming";
-import "videojs-contrib-quality-levels";
-
-import "video.js/dist/video-js.css";
+import ReactPlayer from "react-player"; // Import ReactPlayer
+import Hls from "hls.js"; // Import Hls.js
 
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import LoadingSpinner from "../components/LoadingSpinner";
 import axiosInstance from "../api/axiosInstance";
 import { toast } from "react-toastify";
-import "../css/VideoPlayerPage.css";
+import "../css/VideoPlayerPage.css"; // Keep your existing CSS
 
 const VideoPlayerPage = () => {
   const { videoId } = useParams();
@@ -24,12 +19,12 @@ const VideoPlayerPage = () => {
   const [error, setError] = useState("");
   const hasIncrementedViewForVideoId = useRef({});
 
-  // Video.js specific refs
-  const videoRef = useRef(null); // Ref to the <video> element
-  const playerRef = useRef(null); // Ref to the Video.js player instance
-  const [qualityLevels, setQualityLevels] = useState([]); // State to store available quality levels
-  // MODIFIED: currentQuality now stores the 'value' from the option, not just the label.
-  const [currentQuality, setCurrentQuality] = useState("auto"); // Default: "auto" to match the 'Auto' option's value
+  // ReactPlayer specific refs and states
+  const playerRef = useRef(null); // Ref to the ReactPlayer component
+  const hlsRef = useRef(null); // Ref to the Hls.js instance
+
+  const [qualityLevels, setQualityLevels] = useState([]);
+  const [currentQuality, setCurrentQuality] = useState("auto"); // Default: "auto" for adaptive
 
   const fetchVideoData = useCallback(async () => {
     setLoading(true);
@@ -43,16 +38,20 @@ const VideoPlayerPage = () => {
     }
 
     try {
-      const videoDetailsResponse = await axiosInstance.get(`/videos/${videoId}`);
+      const videoDetailsResponse = await axiosInstance.get(
+        `/videos/${videoId}`
+      );
       setVideo(videoDetailsResponse.data);
 
-      const urlResponse = await axiosInstance.get(`/videos/${videoId}/hls-stream-url`);
+      const urlResponse = await axiosInstance.get(
+        `/videos/${videoId}/hls-stream-url`
+      );
       const relativeUrlFromBackend = urlResponse.data;
 
       if (relativeUrlFromBackend) {
         const fullAbsoluteUrl = `http://localhost:8082${relativeUrlFromBackend}`;
         setHlsPlaybackUrl(fullAbsoluteUrl);
-        console.log("Full HLS Playback URL (for Video.js):", fullAbsoluteUrl);
+        console.log("Full HLS Playback URL:", fullAbsoluteUrl);
       } else {
         console.error("HLS stream URL is empty or null from backend.");
         throw new Error("HLS stream URL not received from backend.");
@@ -94,293 +93,185 @@ const VideoPlayerPage = () => {
     }
   }, [videoId]);
 
-  // --- Video.js Initialization and Cleanup ---
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (hlsPlaybackUrl && videoRef.current && !loading && !error) {
-      if (!playerRef.current) {
-        console.log('Video.js: Attempting to initialize new player instance...');
+  // --- HLS.js Quality Level Management ---
+  const updateQualityLevels = useCallback(() => {
+    if (!hlsRef.current) return;
 
-        const videoJsOptions = {
-          autoplay: false,
-          controls: true,
-          responsive: true,
-          fluid: true,
-          sources: [{
-            src: hlsPlaybackUrl,
-            type: 'application/x-mpegURL', // MIME type for HLS
-          }],
-          html5: {
-            hls: {
-              overrideNative: true // IMPORTANT: Required for videojs-contrib-quality-levels to work
-            }
-          }
-        };
+    const hls = hlsRef.current;
+    const currentLevels = hls.levels;
+    const availableQualities = [];
 
-        const initializePlayer = () => {
-          if (videoRef.current && !playerRef.current) {
-            playerRef.current = videojs(videoRef.current, videoJsOptions, function() {
-              const player = this; // Capture 'this' for clarity
-              console.log('Video.js player is ready and attached to DOM!');
+    // Add 'Auto' option first
+    availableQualities.push({ label: "Auto", value: "auto" });
 
-              player.on('error', function() {
-                const error = this.error();
-                console.error("Video.js Player Error:", error.code, error.message, error.status, error.src);
-                toast.error(`Player Error: ${error.message || 'An unknown player error occurred.'}`);
-              });
-              player.on('loadedmetadata', () => console.log('Video.js: loadedmetadata event fired!'));
-              player.on('loadeddata', () => console.log('Video.js: loadeddata event fired!'));
-              player.on('play', () => console.log('Video.js: play event fired!'));
-              player.on('playing', () => console.log('Video.js: playing event fired!'));
-              player.on('waiting', () => console.log('Video.js: waiting event fired!'));
-
-              const levels = player.qualityLevels(); // Access qualityLevels from player instance
-
-              const updateQualityLevelsState = () => {
-                const availableQualities = [];
-                availableQualities.push({ label: 'Auto', value: 'auto' });
-
-                for (let i = 0; i < levels.length; i++) {
-                  const level = levels[i];
-                  if (level.height || level.width) {
-                    const label = level.height ? `${level.height}p` : `${level.width}p`;
-                    availableQualities.push({ label: label, value: level.id });
-                  }
-                }
-
-                availableQualities.sort((a, b) => {
-                  if (a.value === 'auto') return -1;
-                  if (b.value === 'auto') return 1;
-                  const resA = parseInt(a.label);
-                  const resB = parseInt(b.label);
-                  return resA - resB;
-                });
-
-                setQualityLevels(prevQualities => {
-                    if (prevQualities.length !== availableQualities.length ||
-                        !prevQualities.every((val, index) => val.value === availableQualities[index].value)) {
-                        console.log("Setting quality levels:", availableQualities);
-                        return availableQualities;
-                    }
-                    return prevQualities;
-                });
-
-                // MODIFIED: Log levels.auto and current state clearly
-                console.log(`QualityLevels state - levels.auto: ${levels.auto}`);
-
-                if (levels.auto) {
-                    setCurrentQuality("auto");
-                    console.log("Setting currentQuality state to 'auto' (adaptive mode confirmed).");
-                } else {
-                    const currentManualLevel = levels.levels_.find(level => level.enabled);
-                    if (currentManualLevel) {
-                        setCurrentQuality(currentManualLevel.id);
-                        console.log("Setting currentQuality state to manual quality ID:", currentManualLevel.id);
-                    } else {
-                        // Fallback: If no level is explicitly enabled and not in auto mode, default to 'auto'
-                        setCurrentQuality("auto");
-                        console.log("Fallback: Player quality state ambiguous, setting to 'auto'.");
-                    }
-                }
-              };
-
-              // Assert levels.auto = true when the player is ready to load the source
-              // This is a more direct attempt to force adaptive mode from the start
-              player.on('loadedmetadata', () => {
-                const levels = player.qualityLevels();
-                // Ensure all levels are enabled before trying to set auto
-                for (let i = 0; i < levels.length; i++) {
-                    levels[i].enabled = true;
-                }
-                levels.auto = true; // Assert adaptive mode
-                console.log(`Video.js: levels.auto set to true on loadedmetadata. Current auto state: ${levels.auto}`);
-                updateQualityLevelsState(); // Update dropdown immediately after
-              });
-
-              // Listen for actual quality changes
-              levels.on('addqualitylevel', updateQualityLevelsState);
-              levels.on('removequalitylevel', updateQualityLevelsState);
-              levels.on('change', () => {
-                // MODIFIED: Log levels.auto on change event
-                console.log(`QualityLevels change event - levels.auto: ${levels.auto}`);
-                if (levels.auto) {
-                    setCurrentQuality("auto");
-                    console.log("Player quality changed via event to: Auto (adaptive selected).");
-                } else {
-                    const currentManualLevel = levels.levels_.find(level => level.enabled);
-                    if (currentManualLevel) {
-                        setCurrentQuality(currentManualLevel.id);
-                        console.log("Player quality changed via event to:", currentManualLevel.id);
-                    } else {
-                        setCurrentQuality("auto"); // Fallback
-                        console.log("Player quality changed via event to: Auto (manual selection cleared).");
-                    }
-                }
-              });
-
-              // Initial population of quality levels
-              setTimeout(updateQualityLevelsState, 200);
-              player.load();
-            });
-          }
-        };
-        setTimeout(initializePlayer, 0); // Defer player init to ensure DOM readiness
-
-      } else {
-        // If player already exists and hlsPlaybackUrl changes, just update the source
-        console.log('Video.js: Updating existing player source with new URL.');
-        const player = playerRef.current;
-
-        player.reset();
-        player.src({
-          src: hlsPlaybackUrl,
-          type: 'application/x-mpegURL',
+    currentLevels.forEach((level, index) => {
+      // level.height provides the resolution
+      if (level.height) {
+        availableQualities.push({
+          label: `${level.height}p`,
+          value: index, // Use the index of the level for selection in Hls.js
         });
-
-        setQualityLevels([]);
-        setCurrentQuality("auto");
-
-        const levels = player.qualityLevels();
-        levels.off('addqualitylevel');
-        levels.off('removequalitylevel');
-        levels.off('change');
-
-        const updateQualityLevelsStateOnUpdate = () => {
-            const availableQualities = [];
-            availableQualities.push({ label: 'Auto', value: 'auto' });
-            for (let i = 0; i < levels.length; i++) {
-                const level = levels[i];
-                if (level.height || level.width) {
-                    const label = level.height ? `${level.height}p` : `${level.width}p`;
-                    availableQualities.push({ label: label, value: level.id });
-                }
-            }
-            availableQualities.sort((a, b) => {
-                if (a.value === 'auto') return -1;
-                if (b.value === 'auto') return 1;
-                const resA = parseInt(a.label);
-                const resB = parseInt(b.label);
-                return resA - resB;
-            });
-
-            setQualityLevels(prevQualities => {
-                if (prevQualities.length !== availableQualities.length ||
-                    !prevQualities.every((val, index) => val.value === availableQualities[index].value)) {
-                    console.log("Setting quality levels (on source update):", availableQualities);
-                    return availableQualities;
-                }
-                return prevQualities;
-            });
-
-            console.log(`QualityLevels state (on update) - levels.auto: ${levels.auto}`);
-            if (levels.auto) {
-                setCurrentQuality("auto");
-                console.log("Player is in adaptive mode (on update). Setting currentQuality state to 'auto'.");
-            } else {
-                const currentManualLevel = levels.levels_.find(level => level.enabled);
-                if (currentManualLevel) {
-                    setCurrentQuality(currentManualLevel.id);
-                    console.log("Player is in manual mode (on update). Current manual quality ID:", currentManualLevel.id);
-                } else {
-                    setCurrentQuality("auto");
-                    console.log("Fallback (on update): Player quality state is ambiguous, setting to 'auto'.");
-                }
-            }
-        };
-
-        player.on('loadedmetadata', () => { // Ensure 'auto' is asserted on new source
-            const levels = player.qualityLevels();
-            for (let i = 0; i < levels.length; i++) {
-                levels[i].enabled = true;
-            }
-            levels.auto = true;
-            console.log(`Video.js: levels.auto set to true on loadedmetadata (on update). Current auto state: ${levels.auto}`);
-            updateQualityLevelsStateOnUpdate();
-        });
-
-        levels.on('addqualitylevel', updateQualityLevelsStateOnUpdate);
-        levels.on('removequalitylevel', updateQualityLevelsStateOnUpdate);
-        levels.on('change', () => {
-            console.log(`QualityLevels change event (on update) - levels.auto: ${levels.auto}`);
-            if (levels.auto) {
-                setCurrentQuality("auto");
-                console.log("Player quality changed via event (on update) to: Auto (adaptive selected).");
-            } else {
-                const currentManualLevel = levels.levels_.find(level => level.enabled);
-                if (currentManualLevel) {
-                    setCurrentQuality(currentManualLevel.id);
-                    console.log("Player quality changed via event (on update) to:", currentManualLevel.id);
-                } else {
-                    setCurrentQuality("auto");
-                    console.log("Player quality changed via event (on update) to: Auto (manual selection cleared).");
-                }
-            }
-        });
-        setTimeout(updateQualityLevelsStateOnUpdate, 200);
-        player.load();
       }
+    });
+
+    // Sort qualities numerically, keeping 'Auto' at the top
+    availableQualities.sort((a, b) => {
+      if (a.value === "auto") return -1;
+      if (b.value === "auto") return 1;
+      return parseInt(a.label) - parseInt(b.label);
+    });
+
+    setQualityLevels((prevQualities) => {
+      // Only update if the qualities have actually changed to prevent unnecessary re-renders
+      if (
+        prevQualities.length !== availableQualities.length ||
+        !prevQualities.every(
+          (val, index) => val.value === availableQualities[index].value
+        )
+      ) {
+        console.log("Setting quality levels:", availableQualities);
+        return availableQualities;
+      }
+      return prevQualities;
+    });
+
+    // Update currentQuality state based on Hls.js's current level
+    if (hls.currentLevel === -1) {
+      setCurrentQuality("auto"); // -1 indicates auto selection
+      console.log("Hls.js: Current quality is Auto.");
     } else {
-      console.log("Video.js init skipped or pending:", {
-        hlsPlaybackUrl: hlsPlaybackUrl ? "present" : "null",
-        videoRefCurrent: videoRef.current ? "present" : "null",
-        loading: loading,
-        error: error
-      });
-      if ((loading || error) && playerRef.current) {
-        console.log("Disposing player due to loading/error state transition.");
-        playerRef.current.dispose();
-        playerRef.current = null;
-        setQualityLevels([]);
-        setCurrentQuality("auto");
-      }
-    }
-
-    return () => {
-      if (playerRef.current) {
-        console.log("Video.js: Disposing player instance during cleanup.");
-        const currentLevels = playerRef.current.qualityLevels();
-        currentLevels.off('addqualitylevel');
-        currentLevels.off('removequalitylevel');
-        currentLevels.off('change');
-        playerRef.current.off('loadedmetadata'); // Clean up the new listener
-        playerRef.current.dispose();
-        playerRef.current = null;
-      }
-    };
-  }, [hlsPlaybackUrl, loading, error]);
-
-  // --- Function to handle manual quality change ---
-  const handleQualityChange = useCallback((selectedQualityValue) => {
-    const player = playerRef.current;
-    if (!player) {
-      toast.error("Player not ready to change quality.");
-      return;
-    }
-
-    const levels = player.qualityLevels();
-    for (let i = 0; i < levels.length; i++) {
-      levels[i].enabled = false;
-    }
-
-    if (selectedQualityValue === 'auto') {
-      for (let i = 0; i < levels.length; i++) {
-        levels[i].enabled = true;
-      }
-      levels.auto = true;
-      setCurrentQuality("auto");
-      toast.info("Quality set to Auto (Adaptive)");
-    } else {
-      const selectedLevel = levels.levels_.find(level => level.id === selectedQualityValue);
+      const selectedLevel = hls.levels[hls.currentLevel];
       if (selectedLevel) {
-        selectedLevel.enabled = true;
-        levels.auto = false;
-        setCurrentQuality(selectedLevel.id);
-        toast.info(`Quality set to ${selectedLevel.height}p`);
-      } else {
-        toast.warn(`Selected quality ${selectedQualityValue} not found.`);
+        setCurrentQuality(hls.currentLevel); // Use the index as the value
+        console.log(`Hls.js: Current quality is ${selectedLevel.height}p.`);
       }
     }
   }, []);
+
+  const handleQualityChange = useCallback(
+    (selectedQualityValue) => {
+      if (!hlsRef.current) {
+        toast.error("Player not ready to change quality.");
+        return;
+      }
+      const hls = hlsRef.current;
+
+      if (selectedQualityValue === "auto") {
+        hls.currentLevel = -1; // -1 for auto selection in hls.js
+        setCurrentQuality("auto");
+        toast.info("Quality set to Auto (Adaptive)");
+        console.log("Hls.js: Manual quality set to Auto.");
+      } else {
+        const levelIndex = parseInt(selectedQualityValue, 10);
+        if (levelIndex >= 0 && levelIndex < hls.levels.length) {
+          hls.currentLevel = levelIndex;
+          setCurrentQuality(levelIndex);
+          const selectedLevelHeight = hls.levels[levelIndex].height;
+          toast.info(`Quality set to ${selectedLevelHeight}p`);
+          console.log(`Hls.js: Manual quality set to ${selectedLevelHeight}p.`);
+        } else {
+          toast.warn(`Selected quality ${selectedQualityValue} not found.`);
+        }
+      }
+    },
+    []
+  );
+
+  // --- ReactPlayer Custom HLS.js configuration ---
+  const handleHlsRef = useCallback((hlsInstance) => {
+    if (hlsInstance) {
+      hlsRef.current = hlsInstance;
+      console.log("Hls.js instance obtained:", hlsInstance);
+
+      // Listen for when Hls.js finishes loading the manifest and levels are available
+      hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+        console.log("Hls.js: MANIFEST_PARSED event fired!");
+        updateQualityLevels();
+      });
+
+      // Listen for when quality changes (adaptive or manual)
+      hlsInstance.on(Hls.Events.LEVEL_SWITCHED, (eventName, data) => {
+        console.log("Hls.js: LEVEL_SWITCHED event fired!", data);
+        updateQualityLevels();
+      });
+
+      hlsInstance.on(Hls.Events.ERROR, (eventName, data) => {
+        console.error("Hls.js Error:", eventName, data);
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              toast.error(
+                "Network error during HLS playback. Please check your connection."
+              );
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              toast.error(
+                "Media error during HLS playback. Trying to recover..."
+              );
+              hlsInstance.recoverMediaError();
+              break;
+            default:
+              toast.error(
+                "A fatal HLS playback error occurred. Please try again."
+              );
+              break;
+          }
+        }
+      });
+    } else {
+      // Clean up Hls.js instance when component unmounts or player unloads
+      if (hlsRef.current) {
+        console.log("Hls.js instance being destroyed.");
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+        setQualityLevels([]);
+        setCurrentQuality("auto");
+      }
+    }
+  }, [updateQualityLevels]); // updateQualityLevels is a dependency for useCallback
+
+  // Custom HLS.js config for ReactPlayer
+  const config = {
+    file: {
+      forceHLS: true, // Crucial for ReactPlayer to use HLS.js for HLS streams
+      hlsOptions: {
+        // You can add HLS.js specific options here if needed
+        // For example:
+        // fragLoadingMaxRetry: 5,
+        // fragLoadingRetryDelay: 500,
+      },
+      hlsVersion: Hls.version, // Use the version from the Hls.js import
+    },
+  };
+
+  const handleReady = useCallback((player) => {
+    // This `player` object from ReactPlayer's onReady contains the internal player instance
+    // For HLS streams, this `player` refers to the <video> element
+    if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(hlsPlaybackUrl);
+      hls.attachMedia(player); // Attach HLS.js to the video element
+      handleHlsRef(hls); // Store the hls instance and set up its listeners
+    } else if (player.canPlayType('application/vnd.apple.mpegurl')) {
+      // Native HLS support (Safari on macOS/iOS)
+      player.src = hlsPlaybackUrl;
+      console.log("Using native HLS playback.");
+    } else {
+      toast.error("Your browser does not support HLS playback.");
+      setError("HLS playback not supported on this browser.");
+    }
+  }, [hlsPlaybackUrl, handleHlsRef]);
+
+  // Clean up Hls.js instance when component unmounts or URL changes
+  useEffect(() => {
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+    };
+  }, []); // Run only on unmount
+
 
   return (
     <div className="player-layout">
@@ -400,16 +291,27 @@ const VideoPlayerPage = () => {
           ) : video && hlsPlaybackUrl ? (
             <div className="video-player-container">
               <div className="player-wrapper">
-                <video
-                  ref={videoRef}
-                  className="video-js vjs-default-skin"
-                ></video>
+                <ReactPlayer
+                  ref={playerRef}
+                  url={hlsPlaybackUrl}
+                  playing={false} // Start paused
+                  controls={true} // ReactPlayer provides its own controls by default
+                  width="100%"
+                  height="100%"
+                  config={config} // Pass the custom HLS.js config
+                  onReady={handleReady} // This is where we initiate Hls.js
+                  onError={(e) => console.error("ReactPlayer error:", e)}
+                  // You might want to add more event handlers here if needed
+                  // e.g., onPlay, onPause, onEnded
+                />
               </div>
 
               {/* --- Manual Quality Selector Dropdown --- */}
-              {qualityLevels.length > 0 && (
+              {qualityLevels.length > 1 && ( // Only show if more than just "Auto" is available
                 <div className="quality-selector-container">
-                  <label htmlFor="quality-select" className="quality-label">Quality:</label>
+                  <label htmlFor="quality-select" className="quality-label">
+                    Quality:
+                  </label>
                   <select
                     id="quality-select"
                     className="quality-select"
@@ -436,7 +338,9 @@ const VideoPlayerPage = () => {
               </div>
             </div>
           ) : (
-            <p className="placeholder-text">No video data available or stream URL not ready.</p>
+            <p className="placeholder-text">
+              No video data available or stream URL not ready.
+            </p>
           )}
         </div>
       </div>
