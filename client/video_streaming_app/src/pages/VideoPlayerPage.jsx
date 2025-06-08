@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import ReactPlayer from "react-player"; // Import ReactPlayer
-import Hls from "hls.js"; // Import Hls.js
+import ReactPlayer from "react-player";
+import Hls from "hls.js";
 
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import LoadingSpinner from "../components/LoadingSpinner";
 import axiosInstance from "../api/axiosInstance";
 import { toast } from "react-toastify";
-import "../css/VideoPlayerPage.css"; // Keep your existing CSS
+import "../css/VideoPlayerPage.css";
 
 const VideoPlayerPage = () => {
   const { videoId } = useParams();
@@ -19,14 +19,13 @@ const VideoPlayerPage = () => {
   const [error, setError] = useState("");
   const hasIncrementedViewForVideoId = useRef({});
 
-  // ReactPlayer specific refs and states
-  const playerRef = useRef(null); // Ref to the ReactPlayer component
-  const hlsRef = useRef(null); // Ref to the Hls.js instance
+  const playerRef = useRef(null);
+  const hlsRef = useRef(null);
 
   const [qualityLevels, setQualityLevels] = useState([]);
-  const [currentQuality, setCurrentQuality] = useState("auto"); // Default: "auto" for adaptive
+  const [currentQuality, setCurrentQuality] = useState("auto");
 
-  // NEW: State to control playback
+  // State to control playback
   const [isPlaying, setIsPlaying] = useState(false); // Start paused
 
   const fetchVideoData = useCallback(async () => {
@@ -53,9 +52,6 @@ const VideoPlayerPage = () => {
 
       if (relativeUrlFromBackend) {
         const fullAbsoluteUrl = `http://localhost:8082${relativeUrlFromBackend}`;
-        // IMPORTANT: Only update if the URL actually changes to minimize re-renders
-        // However, if your backend always generates a new token, this will always change.
-        // We will address that nuance with the `NotAllowedError` fix.
         if (hlsPlaybackUrl !== fullAbsoluteUrl) {
             setHlsPlaybackUrl(fullAbsoluteUrl);
             console.log("Updating HLS Playback URL:", fullAbsoluteUrl);
@@ -83,7 +79,7 @@ const VideoPlayerPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [videoId, navigate, setLoading, setError, setVideo, hlsPlaybackUrl, setHlsPlaybackUrl]); // Added hlsPlaybackUrl to dependencies
+  }, [videoId, navigate, setLoading, setError, setVideo, hlsPlaybackUrl, setHlsPlaybackUrl]);
 
   useEffect(() => {
     fetchVideoData();
@@ -111,20 +107,17 @@ const VideoPlayerPage = () => {
     const currentLevels = hls.levels;
     const availableQualities = [];
 
-    // Add 'Auto' option first
     availableQualities.push({ label: "Auto", value: "auto" });
 
     currentLevels.forEach((level, index) => {
-      // level.height provides the resolution
       if (level.height) {
         availableQualities.push({
           label: `${level.height}p`,
-          value: index, // Use the index of the level for selection in Hls.js
+          value: index,
         });
       }
     });
 
-    // Sort qualities numerically, keeping 'Auto' at the top
     availableQualities.sort((a, b) => {
       if (a.value === "auto") return -1;
       if (b.value === "auto") return 1;
@@ -132,7 +125,6 @@ const VideoPlayerPage = () => {
     });
 
     setQualityLevels((prevQualities) => {
-      // Only update if the qualities have actually changed to prevent unnecessary re-renders
       if (
         prevQualities.length !== availableQualities.length ||
         !prevQualities.every(
@@ -145,14 +137,13 @@ const VideoPlayerPage = () => {
       return prevQualities;
     });
 
-    // Update currentQuality state based on Hls.js's current level
     if (hls.currentLevel === -1) {
-      setCurrentQuality("auto"); // -1 indicates auto selection
+      setCurrentQuality("auto");
       console.log("Hls.js: Current quality is Auto.");
     } else {
       const selectedLevel = hls.levels[hls.currentLevel];
       if (selectedLevel) {
-        setCurrentQuality(hls.currentLevel); // Use the index as the value
+        setCurrentQuality(hls.currentLevel);
         console.log(`Hls.js: Current quality is ${selectedLevel.height}p.`);
       }
     }
@@ -167,7 +158,7 @@ const VideoPlayerPage = () => {
       const hls = hlsRef.current;
 
       if (selectedQualityValue === "auto") {
-        hls.currentLevel = -1; // -1 for auto selection in hls.js
+        hls.currentLevel = -1;
         setCurrentQuality("auto");
         toast.info("Quality set to Auto (Adaptive)");
         console.log("Hls.js: Manual quality set to Auto.");
@@ -193,13 +184,11 @@ const VideoPlayerPage = () => {
       hlsRef.current = hlsInstance;
       console.log("Hls.js instance obtained:", hlsInstance);
 
-      // Listen for when Hls.js finishes loading the manifest and levels are available
       hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
         console.log("Hls.js: MANIFEST_PARSED event fired!");
         updateQualityLevels();
       });
 
-      // Listen for when quality changes (adaptive or manual)
       hlsInstance.on(Hls.Events.LEVEL_SWITCHED, (eventName, data) => {
         console.log("Hls.js: LEVEL_SWITCHED event fired!", data);
         updateQualityLevels();
@@ -213,8 +202,6 @@ const VideoPlayerPage = () => {
               toast.error(
                 "Network error during HLS playback. Please check your connection."
               );
-              // You might want to consider re-fetching the token here if it's a 401 error.
-              // For now, let's focus on autoplay.
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
               toast.error(
@@ -226,21 +213,17 @@ const VideoPlayerPage = () => {
               toast.error(
                 "A fatal HLS playback error occurred. Please try again."
               );
-              // Destroy and recreate Hls.js instance in case of unrecoverable fatal errors
               if (hlsRef.current) {
                 hlsRef.current.destroy();
                 hlsRef.current = null;
                 setQualityLevels([]);
                 setCurrentQuality("auto");
-                // Potentially re-fetch video data to get a new URL
-                // fetchVideoData();
               }
               break;
           }
         }
       });
     } else {
-      // Clean up Hls.js instance when component unmounts or player unloads
       if (hlsRef.current) {
         console.log("Hls.js instance being destroyed.");
         hlsRef.current.destroy();
@@ -249,28 +232,22 @@ const VideoPlayerPage = () => {
         setCurrentQuality("auto");
       }
     }
-  }, [updateQualityLevels]); // updateQualityLevels is a dependency for useCallback
+  }, [updateQualityLevels]);
 
-  // Custom HLS.js config for ReactPlayer
- const config = {
-  file: {
-    forceHLS: true,
-    hlsOptions: {
-      // You can add HLS.js specific options here
-      maxBufferLength: 30, // Attempt to buffer only 30 seconds ahead (default is usually higher, e.g., 30-60)
-      maxMaxBufferLength: 60, // Max buffer when idle (not playing, or fast forwarding)
-      // fragLoadingMaxRetry: 5,
-      // fragLoadingRetryDelay: 500,
+  const config = {
+    file: {
+      forceHLS: true,
+      hlsOptions: {
+        // Adding maxBufferLength as discussed, to control how much is buffered
+        maxBufferLength: 30, // Example: try to buffer 30 seconds ahead
+        maxMaxBufferLength: 60, // Max buffer when idle (e.g., paused)
+      },
+      hlsVersion: Hls.version,
     },
-    hlsVersion: Hls.version,
-  },
-};
+  };
 
   const handleReady = useCallback((player) => {
-    // This `player` object from ReactPlayer's onReady contains the internal player instance
-    // For HLS streams, this `player` refers to the <video> element
     if (Hls.isSupported()) {
-      // Destroy existing Hls.js instance if it exists and a new URL is provided
       if (hlsRef.current) {
         console.log("Destroying old Hls.js instance.");
         hlsRef.current.destroy();
@@ -279,24 +256,11 @@ const VideoPlayerPage = () => {
 
       const hls = new Hls();
       hls.loadSource(hlsPlaybackUrl);
-      hls.attachMedia(player); // Attach HLS.js to the video element
-      handleHlsRef(hls); // Store the hls instance and set up its listeners
+      hls.attachMedia(player);
+      handleHlsRef(hls);
 
       console.log("New Hls.js instance created and attached.");
-
-      // Attempt to play immediately if the user interacted, or it's allowed.
-      // This is crucial for fixing the NotAllowedError
-      if (player && player.play) {
-        // We'll set playing={false} on ReactPlayer, so we manually call play here.
-        // It's generally better to rely on a user click.
-        // For now, let's keep it with a user click in the render, but enable it here
-        // if `playing={true}` were used in ReactPlayer.
-        // To directly address the `NotAllowedError`, we keep `playing={false}`
-        // and let the user interact.
-      }
     } else if (player.canPlayType('application/vnd.apple.mpegurl')) {
-      // Native HLS support (Safari on macOS/iOS)
-      // Destroy existing Hls.js instance if it exists (for cross-browser transitions)
       if (hlsRef.current) {
         console.log("Destroying Hls.js instance for native playback.");
         hlsRef.current.destroy();
@@ -304,7 +268,7 @@ const VideoPlayerPage = () => {
       }
       player.src = hlsPlaybackUrl;
       console.log("Using native HLS playback.");
-      setQualityLevels([]); // Native HLS typically doesn't expose levels this way
+      setQualityLevels([]);
       setCurrentQuality("auto");
     } else {
       toast.error("Your browser does not support HLS playback.");
@@ -312,7 +276,6 @@ const VideoPlayerPage = () => {
     }
   }, [hlsPlaybackUrl, handleHlsRef]);
 
-  // Clean up Hls.js instance when component unmounts
   useEffect(() => {
     return () => {
       if (hlsRef.current) {
@@ -321,7 +284,7 @@ const VideoPlayerPage = () => {
         hlsRef.current = null;
       }
     };
-  }, []); // Run only on unmount
+  }, []);
 
 
   // NEW: Handlers for ReactPlayer play/pause events to keep `isPlaying` state updated
@@ -335,14 +298,18 @@ const VideoPlayerPage = () => {
     console.log("Video paused.");
   }, []);
 
-  // NEW: Click handler for the player wrapper to initiate playback
+  // UPDATED: Click handler for the player wrapper
   const handlePlayerWrapperClick = useCallback(() => {
-    if (playerRef.current && !isPlaying) {
-      playerRef.current.play(); // Attempt to play the video
-      setIsPlaying(true); // Update state
-      console.log("Attempting to play video after user click.");
+    if (playerRef.current) {
+      // Toggle playing state using ReactPlayer's internal mechanism
+      // ReactPlayer controls playback via its `playing` prop
+      // So, we just need to toggle our `isPlaying` state
+      setIsPlaying(prevIsPlaying => !prevIsPlaying);
+      console.log("Toggling video play/pause after user click.");
+    } else {
+      console.warn("playerRef.current is null when trying to toggle playback.");
     }
-  }, [isPlaying]);
+  }, []);
 
 
   return (
@@ -364,26 +331,26 @@ const VideoPlayerPage = () => {
             <div className="video-player-container">
               <div
                 className="player-wrapper"
-                onClick={handlePlayerWrapperClick} // Attach click handler here
-                style={{ cursor: isPlaying ? 'default' : 'pointer' }} // Visual feedback for click
+                onClick={handlePlayerWrapperClick}
+                style={{ cursor: isPlaying ? 'default' : 'pointer' }}
               >
                 <ReactPlayer
                   ref={playerRef}
                   url={hlsPlaybackUrl}
                   playing={isPlaying} // Controlled by our state
-                  controls={true} // ReactPlayer provides its own controls by default
+                  controls={true}
                   width="100%"
                   height="100%"
-                  config={config} // Pass the custom HLS.js config
-                  onReady={handleReady} // This is where we initiate Hls.js
+                  config={config}
+                  onReady={handleReady}
                   onError={(e) => console.error("ReactPlayer error:", e)}
-                  onPlay={handlePlay}    // Attach new play handler
-                  onPause={handlePause}  // Attach new pause handler
+                  onPlay={handlePlay}
+                  onPause={handlePause}
                 />
               </div>
 
               {/* --- Manual Quality Selector Dropdown --- */}
-              {qualityLevels.length > 1 && ( // Only show if more than just "Auto" is available
+              {qualityLevels.length > 1 && (
                 <div className="quality-selector-container">
                   <label htmlFor="quality-select" className="quality-label">
                     Quality:
