@@ -25,7 +25,7 @@ const VideoPlayerPage = () => {
   const [qualityLevels, setQualityLevels] = useState([]);
   const [currentQuality, setCurrentQuality] = useState("auto");
 
-  // State to control playback
+  // State to control playback - we'll keep this as ReactPlayer's onPlay/onPause will manage it
   const [isPlaying, setIsPlaying] = useState(false); // Start paused
 
   const fetchVideoData = useCallback(async () => {
@@ -238,7 +238,6 @@ const VideoPlayerPage = () => {
     file: {
       forceHLS: true,
       hlsOptions: {
-        // Adding maxBufferLength as discussed, to control how much is buffered
         maxBufferLength: 30, // Example: try to buffer 30 seconds ahead
         maxMaxBufferLength: 60, // Max buffer when idle (e.g., paused)
       },
@@ -286,8 +285,7 @@ const VideoPlayerPage = () => {
     };
   }, []);
 
-
-  // NEW: Handlers for ReactPlayer play/pause events to keep `isPlaying` state updated
+  // Handlers for ReactPlayer play/pause events to keep `isPlaying` state updated
   const handlePlay = useCallback(() => {
     setIsPlaying(true);
     console.log("Video started playing.");
@@ -298,19 +296,8 @@ const VideoPlayerPage = () => {
     console.log("Video paused.");
   }, []);
 
-  // UPDATED: Click handler for the player wrapper
-  const handlePlayerWrapperClick = useCallback(() => {
-    if (playerRef.current) {
-      // Toggle playing state using ReactPlayer's internal mechanism
-      // ReactPlayer controls playback via its `playing` prop
-      // So, we just need to toggle our `isPlaying` state
-      setIsPlaying(prevIsPlaying => !prevIsPlaying);
-      console.log("Toggling video play/pause after user click.");
-    } else {
-      console.warn("playerRef.current is null when trying to toggle playback.");
-    }
-  }, []);
-
+  // REMOVED custom handlePlayerWrapperClick and its onClick prop from player-wrapper
+  // ReactPlayer's internal controls will now handle play/pause on click.
 
   return (
     <div className="player-layout">
@@ -331,14 +318,15 @@ const VideoPlayerPage = () => {
             <div className="video-player-container">
               <div
                 className="player-wrapper"
-                onClick={handlePlayerWrapperClick}
-                style={{ cursor: isPlaying ? 'default' : 'pointer' }}
+                // REMOVED onClick={handlePlayerWrapperClick}
+                // REMOVED style={{ cursor: isPlaying ? 'default' : 'pointer' }}
+                // ReactPlayer's controls will handle play/pause clicks.
               >
                 <ReactPlayer
                   ref={playerRef}
                   url={hlsPlaybackUrl}
-                  playing={isPlaying} // Controlled by our state
-                  controls={true}
+                  playing={isPlaying} // Still controlled by our state, updated by onPlay/onPause
+                  controls={true} // Crucial: ReactPlayer provides its own click handling for play/pause
                   width="100%"
                   height="100%"
                   config={config}
