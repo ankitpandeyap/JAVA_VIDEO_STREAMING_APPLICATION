@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactPlayer from "react-player";
 import Hls from "hls.js";
-import { jwtDecode } from "jwt-decode"; 
+import { jwtDecode } from "jwt-decode";
 
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
@@ -21,16 +21,25 @@ const VideoPlayerPage = () => {
     const hasIncrementedViewForVideoId = useRef({});
 
     const playerRef = useRef(null);
-    const hlsRef = useRef(null); // Ref to hold the Hls.js instance
+    const hlsInstanceRef = useRef(null); // This will hold the Hls.js instance
 
-    // Refs for HLS token management (these do NOT trigger re-renders)
+    // Refs for HLS token management
     const currentHlsTokenRef = useRef(null);
-    const hlsTokenExpiryRef = useRef(null); // Unix timestamp in seconds
+    const hlsTokenExpiryRef = useRef(null); // Unix timestamp in milliseconds
     const refreshTimeoutId = useRef(null); // To clear the auto-refresh timeout
 
+    // Function refs to break circular dependencies for useCallback/useEffect
+    const refreshHlsTokenRef = useRef();
+    const scheduleTokenRefreshRef = useRef();
+    const fetchVideoDataRef = useRef(); // For main data fetching logic
+
     const [qualityLevels, setQualityLevels] = useState([]);
+    // Initialize currentQuality to "auto" and keep it that way unless a manual selection is made
     const [currentQuality, setCurrentQuality] = useState("auto");
-    const [isPlaying, setIsPlaying] = useState(false); // Start paused
+    const [isPlaying, setIsPlaying] = useState(false);
+
+    // This ref will help us determine if the user has manually selected a quality
+    const userSelectedQualityRef = useRef("auto");
 
     // Helper to extract token and expiry from a full HLS URL
     const extractTokenAndExpiry = useCallback((fullAbsoluteUrl) => {
@@ -39,6 +48,7 @@ const VideoPlayerPage = () => {
             const token = url.searchParams.get("token");
             if (token) {
                 const decoded = jwtDecode(token);
+                // decoded.exp is in seconds, convert to milliseconds
                 const expiryTimeMs = decoded.exp * 1000;
                 console.log(`Extracted HLS Token: ${token.substring(0, 20)}...`);
                 console.log(`HLS Token expires at: ${new Date(expiryTimeMs).toLocaleString()}`);
@@ -50,13 +60,162 @@ const VideoPlayerPage = () => {
         return { token: null, expiryTimeMs: null };
     }, []);
 
-    // --- Using useRef to hold mutable references to our useCallback functions ---
-    // This allows us to break the circular dependency in the useCallback dependency arrays
-    const fetchVideoDataRef = useRef();
-    const scheduleTokenRefreshRef = useRef();
-    const refreshHlsTokenRef = useRef();
+    // --- HLS.js Quality Level Management (Called when Hls.js reports levels) ---
+    const updateQualityLevels = useCallback(() => {
+        const hls = hlsInstanceRef.current;
+        if (!hls || !hls.levels || hls.levels.length === 0) {
+            setQualityLevels([]);
+            // Even if no levels, we want to show "Auto" if nothing is playing
+            setCurrentQuality("auto");
+            return;
+        }
 
-    // Define the useCallback functions
+        const currentLevels = hls.levels;
+        const availableQualities = [];
+
+        availableQualities.push({ label: "Auto", value: "auto" });
+
+        currentLevels.forEach((level, index) => {
+            if (level.height) {
+                availableQualities.push({
+                    label: `${level.height}p`,
+                    value: index, // The value should be the index for Hls.js
+                });
+            }
+        });
+
+        // Sort qualities by height, keeping "Auto" at the top
+        availableQualities.sort((a, b) => {
+            if (a.value === "auto") return -1;
+            if (b.value === "auto") return 1;
+            // Extract numeric part for reliable sorting (e.g., "720p" -> 720)
+            const heightA = parseInt(a.label);
+            const heightB = parseInt(b.label);
+            return heightA - heightB;
+        });
+
+        setQualityLevels((prevQualities) => {
+            if (JSON.stringify(prevQualities) !== JSON.stringify(availableQualities)) {
+                console.log("Setting quality levels:", availableQualities);
+                return availableQualities;
+            }
+            return prevQualities;
+        });
+
+        // Only update currentQuality if the user hasn't explicitly selected one
+        // or if we are returning to 'auto' from a manual selection.
+        if (userSelectedQualityRef.current === "auto") {
+            setCurrentQuality("auto");
+            console.log("Hls.js: Player is in Auto mode, dropdown displays 'Auto'.");
+        } else {
+            // If user has selected a quality, stick to it.
+            // This ensures the dropdown doesn't jump back to an auto-selected resolution.
+            const selectedLevel = hls.levels[hls.currentLevel];
+            if (selectedLevel) {
+                setCurrentQuality(hls.currentLevel);
+                console.log(`Hls.js: Current quality is ${selectedLevel.height}p (user selected/level switched).`);
+            } else {
+                // Fallback to auto if the user-selected level becomes invalid for some reason
+                setCurrentQuality("auto");
+                userSelectedQualityRef.current = "auto";
+                console.warn("Hls.js: User selected level became invalid, reverting to Auto.");
+            }
+        }
+    }, []);
+
+    // Function to handle quality change from dropdown
+    const handleQualityChange = useCallback(
+        (selectedQualityValue) => {
+            const hls = hlsInstanceRef.current;
+            if (!hls) {
+                toast.error("Player not ready to change quality.");
+                return;
+            }
+
+            if (selectedQualityValue === "auto") {
+                hls.currentLevel = -1; // -1 means auto quality
+                setCurrentQuality("auto"); // Reflect "Auto" in the dropdown
+                userSelectedQualityRef.current = "auto"; // Mark that user chose auto
+                toast.info("Quality set to Auto (Adaptive)");
+                console.log("Hls.js: Manual quality set to Auto.");
+            } else {
+                const levelIndex = parseInt(selectedQualityValue, 10);
+                if (levelIndex >= 0 && levelIndex < hls.levels.length) {
+                    hls.currentLevel = levelIndex;
+                    setCurrentQuality(levelIndex); // Update state with the index
+                    userSelectedQualityRef.current = levelIndex; // Mark that user chose this quality
+                    const selectedLevelHeight = hls.levels[levelIndex].height;
+                    toast.info(`Quality set to ${selectedLevelHeight}p`);
+                    console.log(`Hls.js: Manual quality set to ${selectedLevelHeight}p.`);
+                } else {
+                    toast.warn(`Selected quality ${selectedQualityValue} not found.`);
+                }
+            }
+        },
+        []
+    );
+
+    // Define refreshHlsToken using useCallback, then store in ref
+    const refreshHlsToken = useCallback(async () => {
+        console.log("Attempting to refresh HLS token...");
+        try {
+            const urlResponse = await axiosInstance.get(`/videos/${videoId}/hls-stream-url`);
+            const relativeUrlFromBackend = urlResponse.data;
+
+            if (relativeUrlFromBackend) {
+                const newFullAbsoluteUrl = `http://localhost:8082${relativeUrlFromBackend}`;
+                const { token, expiryTimeMs } = extractTokenAndExpiry(newFullAbsoluteUrl);
+
+                if (token && expiryTimeMs) {
+                    currentHlsTokenRef.current = token;
+                    hlsTokenExpiryRef.current = expiryTimeMs;
+                    console.log("New token obtained and stored. Dynamic xhrSetup will use it.");
+                    toast.info("HLS stream token refreshed successfully.");
+                    setHlsPlaybackUrl(newFullAbsoluteUrl); // Keep this to potentially re-trigger ReactPlayer if URL changes beyond token
+                    scheduleTokenRefreshRef.current();
+                    return true;
+                } else {
+                    console.error("New HLS token or expiry not found after refresh attempt.");
+                    toast.error("Failed to get new stream token. Playback might stop.");
+                }
+            } else {
+                console.error("HLS stream URL is empty or null from backend during refresh.");
+                toast.error("Stream URL missing during refresh. Playback might stop.");
+            }
+        } catch (err) {
+            console.error("Failed to refresh HLS token:", err);
+            const errorMessage = err.response?.data?.message || err.response?.data?.error || "Failed to refresh stream token.";
+            toast.error(errorMessage);
+        }
+        return false;
+    }, [videoId, extractTokenAndExpiry, setHlsPlaybackUrl]);
+
+    // Define scheduleTokenRefresh using useCallback, then store in ref
+    const scheduleTokenRefresh = useCallback(() => {
+        if (refreshTimeoutId.current) {
+            clearTimeout(refreshTimeoutId.current);
+            refreshTimeoutId.current = null;
+        }
+
+        const expiry = hlsTokenExpiryRef.current;
+        if (expiry) {
+            const now = Date.now();
+            const refreshTime = Math.max(0, expiry - now - (30 * 1000)); // Refresh 30 seconds before expiry
+
+            console.log(`HLS token will refresh in ${Math.round(refreshTime / 1000)} seconds.`);
+            if (refreshTime > 0) {
+                refreshTimeoutId.current = setTimeout(() => {
+                    console.log("Proactively refreshing HLS token...");
+                    refreshHlsTokenRef.current();
+                }, refreshTime);
+            } else {
+                console.warn("HLS token already expired or very close. Refreshing immediately.");
+                refreshHlsTokenRef.current();
+            }
+        }
+    }, []);
+
+    // Define fetchVideoData using useCallback, then store in ref
     const fetchVideoData = useCallback(async () => {
         setLoading(true);
         setError("");
@@ -82,10 +241,9 @@ const VideoPlayerPage = () => {
                 if (token && expiryTimeMs) {
                     currentHlsTokenRef.current = token;
                     hlsTokenExpiryRef.current = expiryTimeMs;
-                    setHlsPlaybackUrl(fullAbsoluteUrl);
+                    setHlsPlaybackUrl(fullAbsoluteUrl); // This will cause ReactPlayer to try and load
                     console.log("Initial HLS Playback URL set:", fullAbsoluteUrl);
-                    // Call through ref to avoid circular dependency in useCallback deps
-                    scheduleTokenRefreshRef.current(); 
+                    scheduleTokenRefreshRef.current();
                 } else {
                     console.error("Initial HLS token or expiry not found.");
                     throw new Error("Failed to obtain HLS stream token.");
@@ -94,122 +252,47 @@ const VideoPlayerPage = () => {
                 console.error("HLS stream URL is empty or null from backend.");
                 throw new Error("HLS stream URL not received from backend.");
             }
-
             toast.success("Video loaded successfully!");
         } catch (err) {
             console.error("Failed to load video or HLS stream URL:", err);
             const errorMessage = err.response?.data?.message || err.response?.data?.error || "Failed to load video. It might not exist, be unavailable, or you lack permission.";
             setError(errorMessage);
             toast.error(errorMessage);
-
             setTimeout(() => {
                 navigate("/dashboard");
             }, 3000);
         } finally {
             setLoading(false);
         }
-    }, [videoId, navigate, setLoading, setError, setVideo, extractTokenAndExpiry]); 
+    }, [videoId, navigate, setLoading, setError, setVideo, extractTokenAndExpiry, setHlsPlaybackUrl]);
 
-
-    const refreshHlsToken = useCallback(async () => {
-        console.log("Attempting to refresh HLS token...");
-        try {
-            const urlResponse = await axiosInstance.get(`/videos/${videoId}/hls-stream-url`);
-            const relativeUrlFromBackend = urlResponse.data;
-
-            if (relativeUrlFromBackend) {
-                const fullAbsoluteUrl = `http://localhost:8082${relativeUrlFromBackend}`;
-                const { token, expiryTimeMs } = extractTokenAndExpiry(fullAbsoluteUrl);
-
-                if (token && expiryTimeMs) {
-                    currentHlsTokenRef.current = token;
-                    hlsTokenExpiryRef.current = expiryTimeMs;
-
-                    if (hlsRef.current) {
-                        hlsRef.current.config.xhrSetup = (xhr, url) => {
-                            const urlObj = new URL(url);
-                            urlObj.searchParams.set("token", token);
-                            xhr.open("GET", urlObj.toString());
-                        };
-                        console.log("hls.js xhrSetup updated with new token.");
-                        hlsRef.current.startLoad(); 
-                        toast.info("HLS stream token refreshed. Resuming playback.");
-                    } else {
-                        console.warn("Hls.js instance not available, cannot update xhrSetup. Re-fetching video data.");
-                        // Call through ref to avoid circular dependency in useCallback deps
-                        fetchVideoDataRef.current(); 
-                    }
-                    // Call through ref to avoid circular dependency in useCallback deps
-                    scheduleTokenRefreshRef.current(); 
-                    return true; 
-                } else {
-                    console.error("New HLS token or expiry not found after refresh attempt.");
-                    toast.error("Failed to get new stream token. Playback might stop.");
-                }
-            } else {
-                console.error("HLS stream URL is empty or null from backend during refresh.");
-                toast.error("Stream URL missing during refresh. Playback might stop.");
-            }
-        } catch (err) {
-            console.error("Failed to refresh HLS token:", err);
-            const errorMessage = err.response?.data?.message || err.response?.data?.error || "Failed to refresh stream token.";
-            toast.error(errorMessage);
-        }
-        return false; 
-    }, [videoId, extractTokenAndExpiry]); // Dependencies are now just values this function *directly* uses
-
-
-    const scheduleTokenRefresh = useCallback(() => {
-        if (refreshTimeoutId.current) {
-            clearTimeout(refreshTimeoutId.current);
-            refreshTimeoutId.current = null;
-        }
-
-        const expiry = hlsTokenExpiryRef.current;
-        if (expiry) {
-            const now = Date.now();
-            const refreshTime = Math.max(0, expiry - now - (30 * 1000)); 
-            
-            console.log(`HLS token will refresh in ${Math.round(refreshTime / 1000)} seconds.`);
-            refreshTimeoutId.current = setTimeout(() => {
-                console.log("Proactively refreshing HLS token...");
-                // Call through ref to avoid circular dependency in useCallback deps
-                refreshHlsTokenRef.current();
-            }, refreshTime);
-        }
-    }, []); // Dependencies are now just values this function *directly* uses
-
-
-    // --- useEffect to update the refs with the latest useCallback instances ---
-    // This runs after every render, ensuring the refs always point to the fresh functions.
+    // Store functions in refs after they are defined.
     useEffect(() => {
-        fetchVideoDataRef.current = fetchVideoData;
-        scheduleTokenRefreshRef.current = scheduleTokenRefresh;
         refreshHlsTokenRef.current = refreshHlsToken;
-    }, [fetchVideoData, scheduleTokenRefresh, refreshHlsToken]);
+        scheduleTokenRefreshRef.current = scheduleTokenRefresh;
+        fetchVideoDataRef.current = fetchVideoData;
+    }, [refreshHlsToken, scheduleTokenRefresh, fetchVideoData]);
 
-
+    // Initial data fetch effect (uses the ref to call fetchVideoData)
     useEffect(() => {
-        fetchVideoDataRef.current(); // Call the function via its ref
+        if (fetchVideoDataRef.current) {
+            fetchVideoDataRef.current();
+        }
 
         return () => {
-            if (hlsRef.current) {
-                console.log("Hls.js instance being destroyed on unmount.");
-                // SOLUTION: Explicitly detach media before destroying
-                if (hlsRef.current.media) {
-                    hlsRef.current.detachMedia();
-                }
-                hlsRef.current.destroy();
-                hlsRef.current = null;
-            }
+            // Cleanup on unmount
             if (refreshTimeoutId.current) {
                 clearTimeout(refreshTimeoutId.current);
                 refreshTimeoutId.current = null;
             }
+            if (hlsInstanceRef.current) {
+                hlsInstanceRef.current.destroy();
+                hlsInstanceRef.current = null;
+            }
         };
-    }, []); // Empty dependency array because fetchVideoData is called via its ref
+    }, [videoId]);
 
-
+    // Increment view count effect
     useEffect(() => {
         if (videoId && !hasIncrementedViewForVideoId.current[videoId]) {
             axiosInstance
@@ -224,132 +307,45 @@ const VideoPlayerPage = () => {
         }
     }, [videoId]);
 
-    // --- HLS.js Quality Level Management ---
-    const updateQualityLevels = useCallback(() => {
-        if (!hlsRef.current) return;
+    // Callback when ReactPlayer is ready and has loaded its internal player
+    const onPlayerReady = useCallback((player) => {
+        // player is the ReactPlayer instance. We need its internal Hls.js instance.
+        // For HLS, ReactPlayer exposes the Hls.js instance if `forceHLS: true` in config.
+        const hls = player.getInternalPlayer('hls');
 
-        const hls = hlsRef.current;
-        const currentLevels = hls.levels;
-        const availableQualities = [];
+        if (hls && Hls.isSupported()) {
+            hlsInstanceRef.current = hls; // Store the instance for later use
+            console.log("ReactPlayer provided Hls.js instance via onReady:", hls);
 
-        availableQualities.push({ label: "Auto", value: "auto" });
+            // Set initial quality to "auto" in Hls.js to ensure adaptive behavior
+            hls.currentLevel = -1;
+            setCurrentQuality("auto"); // Ensure dropdown shows "Auto"
 
-        currentLevels.forEach((level, index) => {
-            if (level.height) {
-                availableQualities.push({
-                    label: `${level.height}p`,
-                    value: index,
-                });
-            }
-        });
-
-        availableQualities.sort((a, b) => {
-            if (a.value === "auto") return -1;
-            if (b.value === "auto") return 1;
-            return parseInt(a.label) - parseInt(b.label);
-        });
-
-        setQualityLevels((prevQualities) => {
-            if (
-                prevQualities.length !== availableQualities.length ||
-                !prevQualities.every(
-                    (val, index) => val.value === availableQualities[index].value
-                )
-            ) {
-                console.log("Setting quality levels:", availableQualities);
-                return availableQualities;
-            }
-            return prevQualities;
-        });
-
-        if (hls.currentLevel === -1) {
-            setCurrentQuality("auto");
-            console.log("Hls.js: Current quality is Auto.");
-        } else {
-            const selectedLevel = hls.levels[hls.currentLevel];
-            if (selectedLevel) {
-                setCurrentQuality(hls.currentLevel);
-                console.log(`Hls.js: Current quality is ${selectedLevel.height}p.`);
-            }
-        }
-    }, []);
-
-    const handleQualityChange = useCallback(
-        (selectedQualityValue) => {
-            if (!hlsRef.current) {
-                toast.error("Player not ready to change quality.");
-                return;
-            }
-            const hls = hlsRef.current;
-
-            if (selectedQualityValue === "auto") {
-                hls.currentLevel = -1;
-                setCurrentQuality("auto");
-                toast.info("Quality set to Auto (Adaptive)");
-                console.log("Hls.js: Manual quality set to Auto.");
-            } else {
-                const levelIndex = parseInt(selectedQualityValue, 10);
-                if (levelIndex >= 0 && levelIndex < hls.levels.length) {
-                    hls.currentLevel = levelIndex;
-                    setCurrentQuality(levelIndex);
-                    const selectedLevelHeight = hls.levels[levelIndex].height;
-                    toast.info(`Quality set to ${selectedLevelHeight}p`);
-                    console.log(`Hls.js: Manual quality set to ${selectedLevelHeight}p.`);
-                } else {
-                    toast.warn(`Selected quality ${selectedQualityValue} not found.`);
+            // Configure dynamic xhrSetup here to use the latest token from the ref
+            hls.config.xhrSetup = (xhr, url) => {
+                const urlObj = new URL(url);
+                const tokenToUse = currentHlsTokenRef.current; // Get the latest token from the ref
+                if (tokenToUse) {
+                    urlObj.searchParams.set("token", tokenToUse);
                 }
-            }
-        },
-        []
-    );
+                xhr.open("GET", urlObj.toString());
+            };
+            console.log("Hls.js xhrSetup configured for dynamic token inclusion.");
 
-    // --- ReactPlayer Custom HLS.js configuration ---
-    const handleReady = useCallback((player) => {
-        if (!hlsPlaybackUrl) {
-            console.warn("handleReady called, but hlsPlaybackUrl is not set yet.");
-            return;
-        }
-
-        // It's good practice to destroy an old instance if it exists before creating a new one
-        if (hlsRef.current) {
-            console.log("Destroying old Hls.js instance before new one.");
-            if (hlsRef.current.media) { // Ensure media is detached before destruction
-                hlsRef.current.detachMedia();
-            }
-            hlsRef.current.destroy();
-            hlsRef.current = null;
-        }
-
-        const mediaElement = player.getInternalPlayer(); // Get the underlying video element
-
-        if (Hls.isSupported()) {
-            console.log("Hls.js is supported. Initializing...");
-            const hls = new Hls({});
-
-            const { token: initialToken } = extractTokenAndExpiry(hlsPlaybackUrl);
-            if (initialToken) {
-                hls.config.xhrSetup = (xhr, url) => {
-                    const urlObj = new URL(url);
-                    urlObj.searchParams.set("token", initialToken);
-                    xhr.open("GET", urlObj.toString());
-                };
-                console.log("Initial Hls.js xhrSetup configured with token.");
-            } else {
-                console.warn("No initial token found in hlsPlaybackUrl. Hls.js might fail.");
-            }
-
-            hls.loadSource(hlsPlaybackUrl);
-            hls.attachMedia(mediaElement); // Attach to the actual video element
-            hlsRef.current = hls; // Store the instance in ref
-
+            // Attach all your Hls.js event listeners here
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
                 console.log("Hls.js: MANIFEST_PARSED event fired!");
-                updateQualityLevels();
+                updateQualityLevels(); // Update dropdown with parsed levels
             });
 
             hls.on(Hls.Events.LEVEL_SWITCHED, (eventName, data) => {
                 console.log("Hls.js: LEVEL_SWITCHED event fired!", data);
-                updateQualityLevels();
+                // Only update currentQuality state if user is in 'auto' mode
+                // or if the switch was triggered by adaptive logic, not a manual selection.
+                // We rely on userSelectedQualityRef to manage this.
+                if (userSelectedQualityRef.current === "auto") {
+                     updateQualityLevels(); // This will re-evaluate and likely keep it "auto" in dropdown
+                }
             });
 
             hls.on(Hls.Events.ERROR, (eventName, data) => {
@@ -359,26 +355,22 @@ const VideoPlayerPage = () => {
                         case Hls.ErrorTypes.NETWORK_ERROR:
                             if (data.response && (data.response.code === 401 || data.response.code === 403)) {
                                 console.warn("HLS token expired or unauthorized. Attempting refresh...");
-                                // Call through ref
-                                refreshHlsTokenRef.current(); 
+                                refreshHlsTokenRef.current(); // Use the ref to call refresh
                             } else {
                                 toast.error("Network error during HLS playback. Please check your connection.");
-                                hls.recoverMediaError(); 
+                                // Attempt to recover if the error is not due to authorization
+                                if (hls.media) hls.recoverMediaError();
                             }
                             break;
                         case Hls.ErrorTypes.MEDIA_ERROR:
                             toast.error("Media error during HLS playback. Trying to recover...");
-                            hls.recoverMediaError();
+                            if (hls.media) hls.recoverMediaError();
                             break;
                         default:
                             toast.error("A fatal HLS playback error occurred. Please try again.");
-                            if (hlsRef.current) {
-                                // Ensure media is detached before destroying on fatal error
-                                if (hlsRef.current.media) {
-                                    hlsRef.current.detachMedia();
-                                }
-                                hlsRef.current.destroy();
-                                hlsRef.current = null;
+                            if (hlsInstanceRef.current) {
+                                hlsInstanceRef.current.destroy();
+                                hlsInstanceRef.current = null;
                                 setQualityLevels([]);
                                 setCurrentQuality("auto");
                             }
@@ -386,25 +378,19 @@ const VideoPlayerPage = () => {
                     }
                 }
             });
-
-        } else if (mediaElement && mediaElement.canPlayType('application/vnd.apple.mpegurl')) { // Check mediaElement before canPlayType
-            console.log("Using native HLS playback (Hls.js not supported or not needed).");
-            mediaElement.src = hlsPlaybackUrl;
-            if (hlsRef.current) { 
-                if (hlsRef.current.media) { // Ensure media is detached if an HLS instance existed
-                    hlsRef.current.detachMedia();
-                }
-                hlsRef.current.destroy();
-                hlsRef.current = null;
-            }
-            setQualityLevels([]); 
-            setCurrentQuality("auto");
-            toast.info("Using native HLS playback. Quality control may vary by browser.");
+        } else if (player.canPlayType('application/vnd.apple.mpegurl')) {
+            // Fallback to native HLS support for Safari/iOS
+            console.log("Using native HLS playback (browser supports application/vnd.apple.mpegurl).");
+            // ReactPlayer handles source setting for native HLS when `forceHLS: true` is not applicable
+            setQualityLevels([]); // No quality levels to display for native HLS
+            setCurrentQuality("auto"); // Always "Auto" for native playback
         } else {
             toast.error("Your browser does not support HLS playback.");
             setError("HLS playback not supported on this browser.");
+            setQualityLevels([]);
+            setCurrentQuality("auto");
         }
-    }, [hlsPlaybackUrl, updateQualityLevels, extractTokenAndExpiry]); // refreshHlsToken is called via ref here
+    }, [updateQualityLevels]);
 
 
     // Handlers for ReactPlayer play/pause events to keep `isPlaying` state updated
@@ -420,10 +406,11 @@ const VideoPlayerPage = () => {
 
     const config = {
         file: {
-            forceHLS: true, 
+            forceHLS: true, // This tells ReactPlayer to use Hls.js for HLS URLs
             hlsOptions: {
-                maxBufferLength: 30, 
-                maxMaxBufferLength: 60, 
+                maxBufferLength: 10,
+                maxMaxBufferLength: 15,
+                // Add any other Hls.js options here
             },
             hlsVersion: Hls.version,
         },
@@ -455,7 +442,7 @@ const VideoPlayerPage = () => {
                                     width="100%"
                                     height="100%"
                                     config={config}
-                                    onReady={handleReady}
+                                    onReady={onPlayerReady}
                                     onError={(e) => console.error("ReactPlayer error:", e)}
                                     onPlay={handlePlay}
                                     onPause={handlePause}
