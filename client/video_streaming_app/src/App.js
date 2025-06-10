@@ -1,7 +1,6 @@
 import React, { useContext } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
-
 import Register from "./pages/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useLocation } from "react-router-dom";
@@ -14,7 +13,7 @@ import ProfilePage from "./pages/ProfilePage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import LoadingSpinner from "./components/LoadingSpinner";
-import Dashboard from "./pages/Dashboard"; // <--- ADDED this import (assuming path)
+import Dashboard from "./pages/Dashboard";
 import VideoPlayerPage from "./pages/VideoPlayerPage";
 
 export default function App() {
@@ -55,8 +54,21 @@ export default function App() {
         <Route path="/" element={renderRootRoute()} />
 
         {/* Public Routes */}
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
+        {/*
+          // --- HIGHLIGHT START ---
+          // Prevent authenticated users from accessing Login and Register pages.
+          // If authenticated, redirect to /dashboard. Otherwise, render the component.
+        */}
+        <Route
+          path="/register"
+          element={isAuthenticated ? <Navigate to="/dashboard" /> : <Register />}
+        />
+        <Route
+          path="/login"
+          element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />}
+        />
+        {/* // --- HIGHLIGHT END --- */}
+
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
